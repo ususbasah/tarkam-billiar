@@ -111,6 +111,18 @@ body.touchOn #powerWrap{bottom:calc(116px + env(safe-area-inset-bottom,0px))}
 .modalBox p{font-size:.85em;margin:5px 0;line-height:1.55;color:#cfd9ea}
 .modalBox .k{color:#4fc3f7;font-weight:bold}
 .modalBox .w{color:#ffd700}
+.resGrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:8px 0}
+@media(max-width:430px){.resGrid{grid-template-columns:1fr}}
+.resOpt{background:rgba(0,0,0,.35);border:2px solid rgba(255,255,255,.16);border-radius:12px;padding:10px 11px;color:#e9f2ff;cursor:pointer;text-align:left;transition:.15s;touch-action:manipulation;font-family:inherit}
+.resOpt b{display:block;font-size:.88em}
+.resOpt small{display:block;color:#9fb6d8;font-size:.7em;margin-top:3px;line-height:1.45}
+.resOpt.on{background:linear-gradient(180deg,#ffd75e,#f0a500);color:#2b1d00;border-color:#fff2b8;box-shadow:0 0 14px rgba(255,200,0,.45)}
+.resOpt.on small{color:#5a4300}
+.resRow{display:flex;align-items:center;justify-content:space-between;gap:10px;background:rgba(0,0,0,.3);border:1px solid rgba(255,255,255,.12);border-radius:10px;padding:8px 10px;margin:6px 0}
+.resRow .rl{font-size:.78em;color:#cfd9ea}.resRow .rl b{color:#fff}
+.resRow input[type=range]{flex:1;accent-color:#e94560}
+.resInfo{font-size:.72em;color:#8ea7c4;text-align:center;background:rgba(0,0,0,.3);border-radius:8px;padding:6px 8px;margin-top:6px;line-height:1.6}
+.resInfo b{color:#4cff9d}
 .closeModal{margin-top:12px;width:100%;padding:9px;height:auto;font-size:.85em}
 #pickOverlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(4,10,20,.9);z-index:85;display:flex;align-items:center;justify-content:center;padding:14px}
 .pickBox{width:min(560px,94%);max-height:92vh;overflow-y:auto;background:linear-gradient(135deg,#16213e,#0f3460);border:2px solid #e94560;border-radius:16px;padding:16px;box-shadow:0 12px 40px rgba(0,0,0,.65);text-align:center}
@@ -244,6 +256,7 @@ body.touchOn #powerWrap{bottom:calc(116px + env(safe-area-inset-bottom,0px))}
     <button class="btn alt" id="btnOpp" type="button">Ganti Lawan</button>
     <button class="btn" type="button" onclick="newGame()">Game Baru</button>
     <button class="btn" type="button" onclick="openHelp()">Cara Bermain</button>
+    <button class="btn alt" id="btnRes" type="button">📱 Resolusi</button>
     <button class="btn alt" id="btnGagang" type="button">Gagang: Stik</button>
     <button class="btn alt" id="btnCheat" type="button">Cheat</button>
     <button class="btn alt" id="btnSnd" type="button">🔊 Suara</button>
@@ -253,6 +266,7 @@ body.touchOn #powerWrap{bottom:calc(116px + env(safe-area-inset-bottom,0px))}
     <button class="ibtn" id="btnNewQ" type="button" title="Game Baru" onclick="newGame()">🎲</button>
     <button class="ibtn" id="btnOppQ" type="button" title="Ganti Lawan">👥</button>
     <button class="ibtn" id="btnHelpQ" type="button" title="Cara Bermain" onclick="openHelp()">❓</button>
+    <button class="ibtn" id="btnResQ" type="button" title="Resolusi Layar">📱</button>
     <button class="ibtn" id="btnGagangQ" type="button" title="Ganti Gagang">🎯</button>
     <button class="ibtn" id="btnSndQ" type="button" title="Suara">🔊</button>
   </div>
@@ -276,6 +290,7 @@ body.touchOn #powerWrap{bottom:calc(116px + env(safe-area-inset-bottom,0px))}
   <button class="btn alt" id="btnOppM" type="button">Ganti Lawan</button>
   <button class="btn" type="button" onclick="newGame();toggleMenu()">Game Baru</button>
   <button class="btn" type="button" onclick="openHelp();toggleMenu()">Cara Bermain</button>
+  <button class="btn alt" id="btnResM" type="button">📱 Resolusi</button>
   <button class="btn alt" id="btnGagangM" type="button">Gagang: Stik</button>
   <button class="btn alt" id="btnCheatM" type="button">Cheat</button>
   <button class="btn alt" id="btnSndM" type="button">🔊 Suara</button>
@@ -388,12 +403,49 @@ const canvas = document.getElementById('gc');
 const ctx = canvas.getContext('2d');
 let dpr = 1, scale = 1, ox = 0, oy = 0, cw = 0, ch = 0;
 
+// ============ RESOLUSI LAYAR HP ============
+const RES_MODES = [
+  { id: 'auto', label: 'Otomatis', desc: 'Ikuti HP • maks DPR 2' },
+  { id: 'hemat', label: 'Hemat', desc: 'DPR 1 • ringan, irit baterai' },
+  { id: 'lancar', label: 'Lancar 720p', desc: 'DPR 1.5 • seimbang' },
+  { id: 'hd', label: 'HD 1080p', desc: 'DPR 2 • tajam' },
+  { id: 'ultra', label: 'Ultra HD', desc: 'DPR 3 • paling tajam' }
+];
+const GFX_Q = [
+  { id: 'low', label: 'Ringan', desc: 'Efek minimal, FPS max' },
+  { id: 'med', label: 'Sedang', desc: 'Efek standar' },
+  { id: 'high', label: 'Penuh', desc: 'Semua efek & bayangan' }
+];
+let resMode = 'auto', gfxQ = 'high', tableZoom = 1;
+function dprCapFor() {
+  const nat = window.devicePixelRatio || 1;
+  if (resMode === 'hemat') return 1;
+  if (resMode === 'lancar') return Math.min(nat, 1.5);
+  if (resMode === 'hd') return Math.min(nat, 2);
+  if (resMode === 'ultra') return Math.min(nat, 3);
+  return Math.min(nat, 2);
+}
+function resLabel(id) { for (const r of RES_MODES) if (r.id === id) return r.label; return 'Otomatis'; }
+function gfxLabel(id) { for (const g of GFX_Q) if (g.id === id) return g.label; return 'Penuh'; }
+function toggleFullscreen() {
+  try {
+    if (!document.fullscreenElement) {
+      const el = document.documentElement;
+      if (el.requestFullscreen) el.requestFullscreen();
+      else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+    } else {
+      if (document.exitFullscreen) document.exitFullscreen();
+    }
+  } catch (e) {}
+  setTimeout(resize, 350);
+}
+
 function resize() {
-  dpr = Math.min(window.devicePixelRatio || 1, 2);
+  dpr = dprCapFor();
   const r = canvas.parentElement.getBoundingClientRect();
   cw = r.width; ch = r.height;
-  canvas.width = Math.round(cw * dpr);
-  canvas.height = Math.round(ch * dpr);
+  canvas.width = Math.max(2, Math.round(cw * dpr));
+  canvas.height = Math.max(2, Math.round(ch * dpr));
   canvas.style.width = cw + 'px';
   canvas.style.height = ch + 'px';
   const PAD = 12;
@@ -415,6 +467,7 @@ function resize() {
   const wantRight = 0;
   scale = Math.min((cw - wantLeft - wantRight - 2 * PAD) / (PW + 2 * RAIL), (ah - 6) / (PH + 2 * RAIL));
   if (!(scale > 0)) scale = 1;
+  scale = scale * (tableZoom || 1);
   ox = wantLeft + (cw - wantLeft - wantRight - (PW + 2 * RAIL) * scale) / 2 + RAIL * scale;
   oy = top0 + (ah - (PH + 2 * RAIL) * scale) / 2 + RAIL * scale - 4;
   document.getElementById('stage').classList.toggle('hasSide', showSide);
@@ -645,7 +698,7 @@ function nextCue() {
   setCueStyle(CUE_STYLES[(i + 1) % CUE_STYLES.length].id);
   showMsg('Gagang dipakai: ' + cueLabel(cueStyle), 1.6);
 }
-function saveOpt() { try { localStorage.setItem('bilyar8', JSON.stringify({ muted: muted, opp: OPPONENTS[oppIndex].id, mode: gameMode, cue: cueStyle })); } catch (e) {} }
+function saveOpt() { try { localStorage.setItem('bilyar8', JSON.stringify({ muted: muted, opp: OPPONENTS[oppIndex].id, mode: gameMode, cue: cueStyle, res: resMode, gfx: gfxQ, zoom: tableZoom })); } catch (e) {} }
 function loadOpt() {
   try {
     const d = JSON.parse(localStorage.getItem('bilyar8'));
@@ -654,8 +707,43 @@ function loadOpt() {
       if (d.mode === 9 || d.mode === 8) gameMode = d.mode;
       if (typeof d.cue === 'string') { for (const c of CUE_STYLES) if (c.id === d.cue) cueStyle = d.cue; }
       if (d.opp) { for (let i = 0; i < OPPONENTS.length; i++) if (OPPONENTS[i].id === d.opp) oppIndex = i; }
+      if (typeof d.res === 'string') { for (const r of RES_MODES) if (r.id === d.res) resMode = d.res; }
+      if (typeof d.gfx === 'string') { for (const g of GFX_Q) if (g.id === d.gfx) gfxQ = d.gfx; }
+      if (typeof d.zoom === 'number' && d.zoom >= 0.85 && d.zoom <= 1.15) tableZoom = d.zoom;
     }
   } catch (e) {}
+}
+function setResMode(id) {
+  let ok = false;
+  for (const r of RES_MODES) if (r.id === id) ok = true;
+  if (!ok) return;
+  resMode = id;
+  saveOpt();
+  resize();
+  refreshResBtn();
+}
+function setGfxQ(id) {
+  let ok = false;
+  for (const g of GFX_Q) if (g.id === id) ok = true;
+  if (!ok) return;
+  gfxQ = id;
+  saveOpt();
+}
+function setZoom(v) {
+  tableZoom = Math.min(1.15, Math.max(0.85, Number(v) || 1));
+  saveOpt();
+  resize();
+}
+function refreshResBtn() {
+  const t = '📱 ' + resLabel(resMode);
+  const b1 = document.getElementById('btnRes');
+  if (b1) b1.textContent = t;
+  const b2 = document.getElementById('btnResM');
+  if (b2) b2.textContent = t;
+}
+function resInfoText() {
+  const w = Math.round(cw * dpr), h = Math.round(ch * dpr);
+  return 'Layar HP: ' + Math.round(cw) + '×' + Math.round(ch) + ' • Render: ' + w + '×' + h + ' • DPR ' + dpr.toFixed(2).replace(/\.?0+$/, '') + ' • ' + resLabel(resMode) + ' / Grafik ' + gfxLabel(gfxQ);
 }
 
 // ============ ATUR BOLA ============
@@ -1579,10 +1667,11 @@ function drawTable() {
   ctx.fillStyle = wg; ctx.fill();
   ctx.strokeStyle = '#0c0f12'; ctx.lineWidth = 1.2; ctx.stroke();
 
-  // goresan sikat logam (brushed steel)
+  // goresan sikat logam (brushed steel) — dikurangi saat grafik Ringan
   ctx.save();
   roundRect(wx, wy, ww, wh, 6); ctx.clip();
-  for (let i = 0; i < 96; i++) {
+  const brushN = gfxQ === 'low' ? 0 : (gfxQ === 'med' ? 40 : 96);
+  for (let i = 0; i < brushN; i++) {
     const yy = wy + pr(i) * wh;
     ctx.strokeStyle = i % 2 ? 'rgba(255,255,255,.04)' : 'rgba(0,0,0,.06)';
     ctx.lineWidth = 0.25 + pr(i + 40) * 0.6;
@@ -1600,7 +1689,8 @@ function drawTable() {
   const fg = ctx.createLinearGradient(0, 0, 0, PH);
   fg.addColorStop(0, '#2c6ea8'); fg.addColorStop(0.5, '#26629a'); fg.addColorStop(1, '#1f5286');
   ctx.fillStyle = fg; ctx.fillRect(0, 0, PW, PH);
-  // grid meja kerja
+  // grid meja kerja (dimatikan saat grafik Ringan)
+  if (gfxQ !== 'low') {
   ctx.strokeStyle = 'rgba(255,255,255,.05)'; ctx.lineWidth = 0.25;
   ctx.beginPath();
   for (let x = PW / 16; x < PW; x += PW / 16) { ctx.moveTo(x, 0); ctx.lineTo(x, PH); }
@@ -1620,6 +1710,7 @@ function drawTable() {
     ctx.moveTo(PW - 0.5, y); ctx.lineTo(PW - 0.5 - lng, y);
   }
   ctx.stroke();
+  }
   // tulisan vertikal di bed (terukir)
   ctx.save();
   ctx.translate(PW / 2, PH / 2);
@@ -1739,9 +1830,11 @@ function drawTable() {
 }
 function drawBall(b) {
   const x = b.x, y = b.y;
-  // bayangan
+  // bayangan (dimatikan saat grafik Ringan)
+  if (gfxQ !== 'low') {
   ctx.fillStyle = 'rgba(0,0,0,.32)';
   ctx.beginPath(); ctx.ellipse(x + 0.7, y + 1.0, R * 1.02, R * 0.86, 0, 0, Math.PI * 2); ctx.fill();
+  }
   // badan
   ctx.save();
   ctx.beginPath(); ctx.arc(x, y, R, 0, Math.PI * 2); ctx.clip();
@@ -2178,6 +2271,64 @@ function loop(t) {
   requestAnimationFrame(loop);
 }
 
+// ============ MODAL RESOLUSI HP ============
+function openRes() {
+  if (document.querySelector('.modal')) return;
+  modalOpen = true;
+  aiTimer = -1;
+  const m = document.createElement('div');
+  m.className = 'modal';
+  let hRes = '';
+  for (const r of RES_MODES) {
+    hRes += '<button class="resOpt' + (resMode === r.id ? ' on' : '') + '" type="button" data-res="' + r.id + '"><b>' + r.label + '</b><small>' + r.desc + '</small></button>';
+  }
+  let hGfx = '';
+  for (const g of GFX_Q) {
+    hGfx += '<button class="resOpt' + (gfxQ === g.id ? ' on' : '') + '" type="button" data-gfx="' + g.id + '"><b>' + g.label + '</b><small>' + g.desc + '</small></button>';
+  }
+  const zpct = Math.round((tableZoom || 1) * 100);
+  m.innerHTML = '<div class="modalBox">' +
+    '<h2>📱 RESOLUSI LAYAR</h2>' +
+    '<p style="text-align:center">Sesuaikan dengan HP kamu supaya tajam & lancar.</p>' +
+    '<p><span class="k">Resolusi render</span></p>' +
+    '<div class="resGrid" id="resGrid">' + hRes + '</div>' +
+    '<p><span class="k">Kualitas grafik</span></p>' +
+    '<div class="resGrid" id="gfxGrid">' + hGfx + '</div>' +
+    '<div class="resRow"><span class="rl"><b>Ukuran meja</b><br><span id="zoomLbl">' + zpct + '%</span></span>' +
+    '<input type="range" id="zoomSlider" min="85" max="115" step="1" value="' + zpct + '"></div>' +
+    '<div class="resRow"><span class="rl"><b>Layar penuh</b><br>Fullscreen HP / PC</span>' +
+    '<button class="btn alt" id="btnFull" type="button" style="height:36px">⛶ Fullscreen</button></div>' +
+    '<div class="resInfo" id="resInfo">' + resInfoText() + '</div>' +
+    '<button class="btn closeModal" id="resClose" style="height:40px;font-size:.9em">✔ Simpan & Main</button>' +
+    '</div>';
+  document.body.appendChild(m);
+  m.querySelectorAll('#resGrid .resOpt').forEach(function (b) {
+    b.addEventListener('click', function () {
+      setResMode(b.getAttribute('data-res'));
+      m.querySelectorAll('#resGrid .resOpt').forEach(function (x) { x.classList.toggle('on', x === b); });
+      document.getElementById('resInfo').textContent = resInfoText();
+    });
+  });
+  m.querySelectorAll('#gfxGrid .resOpt').forEach(function (b) {
+    b.addEventListener('click', function () {
+      setGfxQ(b.getAttribute('data-gfx'));
+      m.querySelectorAll('#gfxGrid .resOpt').forEach(function (x) { x.classList.toggle('on', x === b); });
+      document.getElementById('resInfo').textContent = resInfoText();
+    });
+  });
+  const zs = document.getElementById('zoomSlider');
+  zs.addEventListener('input', function () {
+    setZoom(Number(this.value) / 100);
+    document.getElementById('zoomLbl').textContent = this.value + '%';
+    document.getElementById('resInfo').textContent = resInfoText();
+  });
+  document.getElementById('btnFull').addEventListener('click', function () { toggleFullscreen(); });
+  document.getElementById('resClose').addEventListener('click', function () {
+    m.remove(); modalOpen = false; scheduleAI();
+    showMsg('Resolusi: ' + resLabel(resMode) + ' • ' + gfxLabel(gfxQ), 1.6);
+  });
+}
+
 // ============ MODAL ============
 function openHelp() {
   const existing = document.querySelector('.modal');
@@ -2195,6 +2346,7 @@ function openHelp() {
     '<p><span class="k">7. Mode Permainan</span><br>Di layar pilih lawan ada tombol <span class="w">BOLA 8</span> dan <span class="w">BOLA 9</span>. Ganti mode kapan saja lewat tombol <b>Ganti Lawan</b>.</p>' +
     '<p><span class="k">8. Mode Bola 9</span><br>Hanya bola <span class="w">1-9</span> dipakai (bola 9 di tengah rak, wajik). Wajib memukul <span class="w">bola bernomor paling rendah</span> lebih dulu — melanggar = foul. Masukkan <span class="w">bola 9</span> secara sah kapan saja untuk MENANG; kalau foul saat bola 9 masuk, bola 9 dikembalikan ke tempatnya. Memasukkan bola apa pun tanpa foul membuatmu tetap melanjutkan giliran (tidak ada kelompok solid/strip).</p>' +
     '<p><span class="k">9. Pilih Gagang</span><br>Di samping meja ada panel <b>PILIH GAGANG</b> bergambar: <span class="w">Stik</span> bilyar, <span class="w">Sapu Lidi</span>, <span class="w">Cangkul</span>, dan <span class="w">Sekop</span> — klik salah satu untuk memakainya. Di layar sempit, pakai tombol <b>Gagang</b> di pojok kanan atas. Pilihan tersimpan untuk pertandingan berikutnya.</p>' +
+    '<p><span class="k">10. Resolusi HP</span><br>Tekan tombol <span class="w">📱 Resolusi</span> untuk menyesuaikan layar HP: <b>Otomatis / Hemat / Lancar 720p / HD 1080p / Ultra HD</b>, kualitas grafik <b>Ringan / Sedang / Penuh</b>, geser <b>Ukuran meja 85-115%</b>, dan tombol <b>Fullscreen</b>. Kalau HP lag pilih Hemat+Ringan, kalau buram pilih HD/Ultra. Pilihan tersimpan otomatis.</p>' +
     '<button class="btn closeModal" onclick="this.closest(\'.modal\').remove()">Mengerti!</button>' +
     '</div>';
   document.body.appendChild(m);
@@ -2208,6 +2360,9 @@ window.addEventListener('resize', resize);
 window.addEventListener('orientationchange', function () { setTimeout(resize, 300); });
 if (window.visualViewport) window.visualViewport.addEventListener('resize', resize);
 document.getElementById('btnOpp').addEventListener('click', function () { showPicker(); });
+document.getElementById('btnRes').addEventListener('click', function () { openRes(); });
+document.getElementById('btnResM').addEventListener('click', function () { toggleMenu(); openRes(); });
+document.getElementById('btnResQ').addEventListener('click', function () { openRes(); });
 document.getElementById('btnOppM').addEventListener('click', function () { showPicker(); toggleMenu(); });
 document.getElementById('btnCheat').addEventListener('click', function () { openCheat(); });
 document.getElementById('btnCheatM').addEventListener('click', function () { toggleMenu(); openCheat(); });
@@ -2233,6 +2388,7 @@ document.querySelectorAll('#cuePanel .cueOpt').forEach(function (b) {
   });
 });
 refreshCueBtn();
+refreshResBtn();
 powerSlider.addEventListener('input', function () { power = clamp(Number(this.value) / 100, 0, 1); });
 powerSlider.addEventListener('change', function () { power = clamp(Number(this.value) / 100, 0, 1); });
 fireBtn.addEventListener('click', function () {
