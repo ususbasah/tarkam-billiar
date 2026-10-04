@@ -1,0 +1,2262 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#0d1b2a">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>TARKAM BILLIARD</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{background:#0d1b2a;color:#e9f2ff;font-family:'Segoe UI',sans-serif;overflow:hidden;width:100%;position:fixed;top:0;left:0;height:100%;height:100dvh;overscroll-behavior:none;-webkit-user-select:none;user-select:none}
+body{display:flex;flex-direction:column}
+/* topbar jadi lapisan transparan di atas meja (tampilan penuh ala CrazyGames) */
+.topbar{position:absolute;top:0;left:0;right:0;z-index:30;pointer-events:none;box-shadow:0 8px 22px rgba(0,0,0,.55)}
+.topbar>header,.topbar>.ticker{pointer-events:auto}
+header{background:linear-gradient(180deg,rgba(13,27,42,.97),rgba(13,27,42,.86));padding:6px calc(10px + env(safe-area-inset-right,0px)) 6px calc(10px + env(safe-area-inset-left,0px));display:flex;align-items:center;gap:8px;flex-wrap:wrap;border-bottom:2px solid #e94560;padding-top:calc(6px + env(safe-area-inset-top,0px))}
+.hud{display:flex;gap:6px;align-items:center;flex:1;min-width:0}
+.pcard{display:flex;flex-direction:column;background:rgba(0,0,0,.32);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:3px 9px;min-width:104px;transition:.2s}
+.pcard b{font-size:.78em;letter-spacing:.3px}
+.pcard i{font-style:normal;font-size:.6em;color:#9fb6d8}
+.pcard.active{border-color:#ffd700;background:rgba(255,215,0,.12);box-shadow:0 0 12px rgba(255,215,0,.28)}
+#turnLbl{background:rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.14);border-radius:12px;padding:4px 12px;font-size:.7em;white-space:nowrap;color:#ffd76a}
+.menuBtns{display:flex;gap:5px;align-items:center;flex-wrap:wrap}
+.btn{background:#e94560;border:none;color:#fff;padding:4px 10px;border-radius:8px;cursor:pointer;font-size:.7em;transition:.2s;white-space:nowrap;touch-action:manipulation;line-height:1;display:inline-flex;align-items:center;justify-content:center;height:26px}
+.btn:hover{background:#c73650;transform:scale(1.04)}
+.btn.alt{background:#0f3460;border:1px solid #2b6cb0}
+.btn.alt:hover{background:#164a86}
+.logo{font-weight:900;font-size:.92em;letter-spacing:2px;color:#ffd700;text-shadow:0 1px 8px rgba(255,190,0,.35);white-space:nowrap;flex-shrink:0;user-select:none}
+.logo span{color:#e94560}
+.gameTitle{font-size:1.85em;letter-spacing:4px;color:#ffd700;text-shadow:0 0 22px rgba(255,190,0,.35),0 2px 0 #7a4b00;font-weight:900;margin:0 0 2px;line-height:1.1}
+.gameTitle span{color:#e94560;text-shadow:0 0 22px rgba(233,69,96,.5),0 2px 0 #5c0f1e}
+.menuBtn{display:none;background:#0f3460;border:1px solid #e94560;font-weight:bold}
+.quickBtns{display:none;gap:4px;align-items:center;flex-shrink:0}
+.ibtn{width:32px;height:32px;border-radius:9px;background:rgba(15,52,96,.95);border:1px solid rgba(233,69,96,.75);color:#fff;font-size:.9em;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;touch-action:manipulation;line-height:1;padding:0;transition:.15s;box-shadow:0 2px 8px rgba(0,0,0,.4)}
+.ibtn:active{transform:scale(.9);background:#164a86}
+#rotOverlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:radial-gradient(circle at 50% 38%,#15314f,#071120);z-index:120;flex-direction:column;align-items:center;justify-content:center;text-align:center;cursor:pointer;padding:24px}
+#rotOverlay .icon{font-size:4em;margin-bottom:14px;animation:rot 2s ease-in-out infinite;filter:drop-shadow(0 0 18px rgba(255,190,0,.5))}
+#rotOverlay p{color:#dbe8fb;font-size:1.05em;margin:5px 0}
+#rotOverlay p b{color:#ffd700;letter-spacing:3px;font-size:1.15em;text-shadow:0 0 18px rgba(255,190,0,.45)}
+#rotOverlay .roArrow{color:#4cff9d;font-weight:bold;letter-spacing:2px;margin-top:14px;animation:pulse 1.6s ease-in-out infinite}
+#rotOverlay small{color:#8ea7c4;font-size:.86em;margin-top:16px}
+#rotOverlay .roX{margin-top:20px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.32);color:#dbe8fb;font-weight:800;font-size:.8em;padding:9px 18px;border-radius:22px;cursor:pointer;letter-spacing:1.5px;touch-action:manipulation;transition:.15s;font-family:inherit}
+#rotOverlay .roX:hover,#rotOverlay .roX:active{background:rgba(233,69,96,.35);border-color:#e94560;transform:scale(1.05)}
+body.rotOff #rotOverlay{display:none!important}
+/* layar keluar game */
+#quitScreen{position:fixed;top:0;left:0;width:100%;height:100%;background:radial-gradient(circle at 50% 38%,rgba(21,49,79,.97),rgba(7,17,32,.985));z-index:95;display:none;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:18px}
+#quitScreen.show{display:flex}
+#quitScreen .qLogo{font-weight:900;font-size:.85em;letter-spacing:4px;color:#ffd700;text-shadow:0 0 20px rgba(255,190,0,.35);margin-bottom:8px}
+#quitScreen .qLogo span{color:#e94560}
+#quitScreen h2{color:#ffd700;font-size:1.6em;letter-spacing:5px;margin-bottom:8px;text-shadow:0 0 26px rgba(255,190,0,.45)}
+#quitScreen p{color:#cfd9ea;font-size:.9em;line-height:1.7;margin:5px 0}
+#quitScreen p b{color:#4cff9d}
+#quitScreen .qBtns{display:flex;gap:9px;flex-wrap:wrap;justify-content:center;margin-top:18px}
+#quitScreen .qBtns .btn{height:44px;padding:0 20px;font-size:.88em;font-weight:800}
+#quitScreen .qNote{font-size:.74em;color:#8ea7c4;margin-top:16px;min-height:1.2em;max-width:420px}
+@keyframes rot{0%,100%{transform:rotate(0)}50%{transform:rotate(90deg)}}
+@keyframes pulse{0%,100%{opacity:.55}50%{opacity:1}}
+@media (orientation:portrait){#rotOverlay{display:flex}}
+#menuPanel{display:none;position:fixed;top:env(safe-area-inset-top,0px);right:calc(6px + env(safe-area-inset-right,0px));z-index:60;background:rgba(15,52,96,.97);border:2px solid #e94560;border-radius:12px;padding:8px;flex-direction:column;gap:6px;width:190px;max-height:calc(100vh - 52px);overflow-y:auto;overscroll-behavior:contain;box-shadow:0 8px 24px rgba(0,0,0,.5)}
+#menuPanel .btn{width:100%}
+.mpHead{display:none;align-items:center;justify-content:space-between;gap:8px;padding:0 1px 5px;border-bottom:1px solid rgba(233,69,96,.55);margin-bottom:1px}
+.mpHead span{font-size:.7em;font-weight:900;color:#ffd75e;letter-spacing:3px}
+.mpX{width:28px;height:28px;border-radius:9px;background:#0d1b2a;border:1px solid #e94560;color:#fff;font-size:.9em;line-height:1;cursor:pointer;touch-action:manipulation;transition:.15s}
+.mpX:active{transform:scale(.9);background:#164a86}
+.ticker{display:flex;align-items:center;gap:8px;background:linear-gradient(90deg,#12263f,#0d1b2a 45%,#12263f);border-bottom:1px solid rgba(233,69,96,.65);padding:5px 8px;overflow:hidden;flex:0 0 auto}
+.tkBadge{flex:0 0 auto;background:linear-gradient(180deg,#ffd75e,#f0a500);color:#2b1d00;font-size:.64em;font-weight:800;letter-spacing:1.4px;padding:3px 9px;border-radius:11px;white-space:nowrap;box-shadow:0 0 10px rgba(255,200,0,.35);text-transform:uppercase}
+.tkWin{flex:1;min-width:0;overflow:hidden;position:relative;-webkit-mask-image:linear-gradient(90deg,transparent,#000 2%,#000 98%,transparent);mask-image:linear-gradient(90deg,transparent,#000 2%,#000 98%,transparent)}
+.tkTrack{display:inline-flex;align-items:center;white-space:nowrap;animation:tkScroll 42s linear infinite;will-change:transform}
+.tkItem{color:#f2f7ff;font-size:.8em;font-weight:700;padding:0 4px;text-shadow:0 1px 5px rgba(0,0,0,.9)}
+.tkDot{color:#e94560;font-size:.9em;padding:0 9px;font-weight:900}
+.ticker:hover .tkTrack,.ticker:focus-within .tkTrack{animation-play-state:paused}
+@keyframes tkScroll{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+@media(max-width:760px), (pointer:coarse){
+  .tkKat{display:none}
+  .tkBadge{font-size:.56em;padding:2px 7px}
+  .tkItem{font-size:.7em}
+  .ticker{padding:4px 6px;gap:6px}
+}
+@media(min-width:761px) and (pointer:fine){
+  #menuPanel{display:none!important}
+  .menuBtn{display:none!important}
+}
+main{flex:1;position:relative;overflow:hidden;min-height:0;padding-bottom:env(safe-area-inset-bottom)}
+canvas{width:100%;height:100%;display:block;touch-action:none;user-select:none;-webkit-user-select:none}
+#powerWrap{position:absolute;bottom:46px;left:50%;transform:translateX(-50%);width:min(260px,72vw);height:15px;background:rgba(0,0,0,.6);border-radius:8px;overflow:hidden;display:none;z-index:5;border:1px solid #555}
+#powerBar{height:100%;width:0%;background:linear-gradient(90deg,#00ff88,#ffcc00,#ff3333);border-radius:8px}
+#msg{position:absolute;top:44%;left:50%;transform:translate(-50%,-50%);font-size:min(1.5em,4.4vw);font-weight:bold;text-shadow:0 2px 18px rgba(0,0,0,.9);text-align:center;pointer-events:none;z-index:4;opacity:0;transition:opacity .3s;padding:0 10px;white-space:pre-line}
+#hint{position:absolute;bottom:10px;left:50%;transform:translateX(-50%);font-size:min(.72em,3vw);color:#dbe8fb;text-align:center;z-index:5;background:rgba(5,17,34,.58);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);padding:5px 14px;border-radius:20px;border:1px solid rgba(255,255,255,.16);max-width:92%;pointer-events:none}
+/* ===== kontrol sentuh (HP) ===== */
+#touchBar{position:absolute;left:0;right:0;bottom:calc(10px + env(safe-area-inset-bottom,0px));display:none;align-items:center;justify-content:space-between;gap:10px;padding:0 calc(12px + env(safe-area-inset-right,0px)) 0 calc(12px + env(safe-area-inset-left,0px));z-index:6;pointer-events:none}
+body.touchOn #touchBar{display:flex}
+/* petunjuk dipindah ke celah di tengah bar, biar tidak menutupi meja/lubang */
+/* petunjuk dipindah ke celah antara slider dan tombol TEMBAK (kanan bar),
+   lebar dibatasi ruang celah supaya tidak pernah menutupi meja maupun kontrol */
+body.touchOn #hint{left:auto;right:calc(124px + env(safe-area-inset-right,0px));transform:none;bottom:calc(44px + env(safe-area-inset-bottom,0px));max-width:calc(44% - 136px);font-size:min(.62em,2.4vw);padding:5px 8px;line-height:1.35;border-radius:12px;text-align:center}
+body.touchOn #powerWrap{bottom:calc(116px + env(safe-area-inset-bottom,0px))}
+#powerCtl{flex:1;max-width:56%;min-width:0;display:flex;align-items:center;gap:7px;background:rgba(5,17,34,.6);backdrop-filter:blur(7px);-webkit-backdrop-filter:blur(7px);border:1px solid rgba(255,255,255,.22);border-radius:26px;padding:8px 12px;pointer-events:auto;box-shadow:0 4px 14px rgba(0,0,0,.5)}
+.pwLbl{font-size:.6em;font-weight:900;color:#ffd76a;letter-spacing:1.5px}
+#powerNum{font-size:.7em;font-weight:900;color:#4cff9d;min-width:36px;text-align:right;font-variant-numeric:tabular-nums}
+#powerSlider{-webkit-appearance:none;appearance:none;flex:1;min-width:0;height:12px;border-radius:7px;background:linear-gradient(90deg,#00ff88,#ffcc00,#ff3333);outline:none;touch-action:none;cursor:pointer}
+#powerSlider::-webkit-slider-thumb{-webkit-appearance:none;width:28px;height:28px;border-radius:50%;background:#fff;border:3px solid #e94560;box-shadow:0 3px 10px rgba(0,0,0,.65);cursor:pointer}
+#powerSlider::-moz-range-thumb{width:26px;height:26px;border-radius:50%;background:#fff;border:3px solid #e94560;box-shadow:0 3px 10px rgba(0,0,0,.65);cursor:pointer}
+#fireBtn{flex:0 0 auto;width:96px;height:96px;border-radius:50%;background:radial-gradient(circle at 34% 28%,#ff8fa3,#e94560 58%,#98203a);border:3px solid #ffd75e;color:#fff;font-weight:900;font-size:1.02em;letter-spacing:2px;box-shadow:0 8px 20px rgba(0,0,0,.6),0 0 26px rgba(233,69,96,.55);touch-action:manipulation;pointer-events:auto;transition:transform .1s;text-shadow:0 2px 6px rgba(0,0,0,.6)}
+#fireBtn:active{transform:scale(.93)}
+#fireBtn:disabled{filter:grayscale(.85) brightness(.65);box-shadow:none}
+.modal{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.72);display:flex;align-items:center;justify-content:center;z-index:80}
+.modalBox{background:linear-gradient(135deg,#16213e,#0f3460);border:2px solid #e94560;border-radius:16px;padding:16px;max-width:430px;width:92%;max-height:84vh;overflow-y:auto}
+.modalBox h2{color:#e94560;margin-bottom:8px;text-align:center;font-size:1.1em}
+.modalBox p{font-size:.85em;margin:5px 0;line-height:1.55;color:#cfd9ea}
+.modalBox .k{color:#4fc3f7;font-weight:bold}
+.modalBox .w{color:#ffd700}
+.closeModal{margin-top:12px;width:100%;padding:9px;height:auto;font-size:.85em}
+#pickOverlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(4,10,20,.9);z-index:85;display:flex;align-items:center;justify-content:center;padding:14px}
+.pickBox{width:min(560px,94%);max-height:92vh;overflow-y:auto;background:linear-gradient(135deg,#16213e,#0f3460);border:2px solid #e94560;border-radius:16px;padding:16px;box-shadow:0 12px 40px rgba(0,0,0,.65);text-align:center}
+.pickBox h2{color:#e94560;font-size:1.2em;letter-spacing:3px}
+.pickSub{font-size:.78em;color:#9fb6d8;margin:4px 0 12px}
+.modeSel{display:flex;gap:8px;align-items:center;justify-content:center;margin:0 0 13px}
+.modeSel .mlab{font-size:.66em;letter-spacing:3px;color:#9fb6d8;font-weight:bold}
+.modeBtn{font-family:inherit;font-weight:bold;font-size:.8em;letter-spacing:1.5px;padding:8px 18px;border-radius:10px;cursor:pointer;touch-action:manipulation;background:rgba(0,0,0,.35);color:#cfe0f5;border:2px solid rgba(255,255,255,.16);transition:.15s}
+.modeBtn:active{transform:scale(1.04)}
+.modeBtn.on{background:linear-gradient(180deg,#ffd75e,#f0a500);color:#2b1d00;border-color:#fff2b8;box-shadow:0 0 14px rgba(255,200,0,.45)}
+.pickGrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media(max-width:430px){.pickGrid{grid-template-columns:1fr}}
+.pickCard{background:rgba(0,0,0,.32);border:2px solid rgba(255,255,255,.14);border-radius:12px;padding:11px 12px;color:#e9f2ff;cursor:pointer;text-align:left;transition:.15s;touch-action:manipulation;font-family:inherit}
+.pickCard:hover,.pickCard:active{transform:scale(1.03);border-color:#ffd700;background:rgba(255,215,0,.1)}
+.pickCard b{display:flex;align-items:center;gap:7px;font-size:1.02em}
+.pickCard small{display:block;color:#9fb6d8;font-size:.74em;margin-top:4px;line-height:1.45}
+.tag{font-size:.6em;padding:2px 7px;border-radius:10px;letter-spacing:.5px;font-weight:bold;white-space:nowrap}
+.t-hard{background:#e94560;color:#fff}
+.t-normal{background:#d1a300;color:#222}
+.t-easy{background:#0f8a3d;color:#fff}
+.t-legend{background:linear-gradient(90deg,#ffd700,#ff9500);color:#3a2600}
+.pickNote{margin-top:12px;font-size:.72em;color:#7f93b3;line-height:1.5}
+.pickFoot{margin-top:10px;display:flex;gap:8px;justify-content:center}
+.pickFoot .btn{height:32px;padding:0 16px;font-size:.78em}
+/* portrait di HP: tetap BISA dimainkan, tanpa dipaksa putar */
+/* ===== panel samping meja (gambar/poster bengkel sudah dihapus semua) ===== */
+.shop{position:absolute;top:50%;transform:translateY(-50%);width:146px;display:none;flex-direction:column;gap:11px;z-index:2;pointer-events:none}
+.shopL{left:calc(8px + env(safe-area-inset-left,0px));top:8px;transform:none}
+#stage.hasSide .shop{display:flex}
+/* panel pilih gagang (di samping meja) */
+.cuePanel{border:2px solid #39454f;border-radius:9px;padding:7px 6px 6px;pointer-events:auto;
+  box-shadow:0 8px 20px rgba(0,0,0,.55),inset 0 0 0 1px rgba(255,255,255,.05);
+  background-image:
+    radial-gradient(circle at 6px 6px,#93a0ac 1.6px,transparent 2.2px),
+    radial-gradient(circle at calc(100% - 6px) 6px,#93a0ac 1.6px,transparent 2.2px),
+    radial-gradient(circle at 6px calc(100% - 6px),#93a0ac 1.6px,transparent 2.2px),
+    radial-gradient(circle at calc(100% - 6px) calc(100% - 6px),#93a0ac 1.6px,transparent 2.2px),
+    linear-gradient(160deg,#1a242e,#0f151c);
+}
+.cueTitle{font-size:.8em;letter-spacing:3px;color:#ffe27a;font-weight:800;text-align:center;margin-bottom:7px;text-shadow:0 1px 6px rgba(0,0,0,.9);border-bottom:1px solid rgba(255,226,122,.35);padding-bottom:5px}
+.cueGrid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.cueOpt{display:flex;flex-direction:column;align-items:center;gap:5px;background:rgba(0,0,0,.45);
+  border:2px solid rgba(255,255,255,.22);border-radius:9px;padding:7px 4px 6px;cursor:pointer;
+  font-family:inherit;color:#eaf3ff;transition:.15s;touch-action:manipulation}
+.cueOpt:active{transform:scale(1.05)}
+.cueOpt svg{display:block;width:100%;height:auto}
+.cueOpt span{font-size:.78em;font-weight:800;letter-spacing:.6px;text-shadow:0 1px 4px rgba(0,0,0,.85)}
+.cueOpt.on{background:linear-gradient(180deg,#ffd75e,#f0a500);color:#2b1d00;border-color:#fff2b8;box-shadow:0 0 12px rgba(255,200,0,.45)}
+.cueOpt.on span{text-shadow:none}
+/* ===== ringkasan layar HP (ditaruh paling akhir supaya menang) =====
+   Berlaku juga untuk HP lebar (mis. 1280x720 / 16:9) lewat (pointer:coarse) */
+@media(max-width:760px), (pointer:coarse){
+  header{flex-wrap:nowrap;align-items:center;justify-content:space-between;padding:4px 6px}
+  .hud{flex:0 1 auto;overflow-x:auto;gap:4px;padding:2px 0;scrollbar-width:none}
+  .hud::-webkit-scrollbar{display:none}
+  .pcard{min-width:0;flex-shrink:0;padding:3px 8px}
+  .pcard b{font-size:.8em}
+  .pcard i{font-size:.55em}
+  #turnLbl{font-size:.62em;padding:3px 8px}
+  .menuBtns{display:none}
+  .quickBtns{display:flex}
+  .logo{font-size:.7em;letter-spacing:1px}
+  .gameTitle{font-size:1.3em;letter-spacing:2px}
+  .menuBtn{display:inline-flex;height:32px;font-size:.76em;padding:0 10px;gap:0}
+  #menuPanel{width:210px;right:calc(6px + env(safe-area-inset-right,0px));top:calc(40px + env(safe-area-inset-top,0px))}
+  #menuPanel.show{display:flex}
+  #menuPanel .mpHead{display:flex}
+  #menuPanel .btn{height:42px;font-size:.86em;justify-content:flex-start;padding:0 12px}
+  #menuPanel .btn:last-child{color:#ffd76a;border-color:#e94560}
+  #powerSlider{height:26px;border-radius:13px}
+  #powerSlider::-webkit-slider-thumb{width:30px;height:30px}
+  #fireBtn{width:86px;height:86px;font-size:.94em}
+  #powerCtl{max-width:46%;padding:7px 10px}
+  .pickCard{padding:13px}
+  .pickFoot .btn{height:40px;font-size:.84em}
+}
+/* HP landscape LEBAR (mis. 1280x720 / 16:9): target sentuh & teks diperbesar */
+@media(min-width:761px) and (pointer:coarse){
+  .ibtn{width:38px;height:38px;font-size:1em}
+  .menuBtn{height:38px;font-size:.86em;padding:0 15px}
+  .pcard b{font-size:.92em}
+  .pcard i{font-size:.66em}
+  #turnLbl{font-size:.76em}
+  #menuPanel{width:240px;top:calc(50px + env(safe-area-inset-top,0px))}
+  #menuPanel .btn{height:48px;font-size:.92em}
+  #menuPanel .mpX{width:34px;height:34px}
+}
+@media(max-height:440px) and (orientation:landscape){
+  header{padding-top:3px;padding-bottom:3px}
+  .logo{font-size:.66em}
+  .gameTitle{font-size:1.05em;letter-spacing:2px;margin-bottom:0}
+  .pcard{padding:2px 7px}
+  .pcard b{font-size:.72em}
+  .pcard i{font-size:.5em}
+  #turnLbl{font-size:.58em;padding:2px 7px}
+  .ticker{padding:3px 6px}
+  .tkBadge{font-size:.5em;padding:2px 6px}
+  .tkItem{font-size:.64em}
+  .ibtn{width:29px;height:29px;font-size:.82em}
+  .menuBtn{height:29px;font-size:.7em;padding:0 8px}
+  #menuPanel{gap:4px;top:calc(36px + env(safe-area-inset-top,0px))}
+  #menuPanel .btn{height:36px;font-size:.8em}
+  #fireBtn{width:66px;height:66px;font-size:.76em;letter-spacing:1px}
+  #powerCtl{padding:6px 9px}
+  .pwLbl{font-size:.54em}
+  #powerNum{font-size:.62em;min-width:32px}
+  body.touchOn #hint{right:calc(94px + env(safe-area-inset-right,0px));bottom:calc(24px + env(safe-area-inset-bottom,0px));max-width:calc(54% - 106px);font-size:min(.56em,1.7vw)}
+  body.touchOn #powerWrap{bottom:calc(80px + env(safe-area-inset-bottom,0px))}
+  #touchBar{bottom:calc(6px + env(safe-area-inset-bottom,0px))}
+}
+</style>
+</head>
+<body>
+<div id="rotOverlay">
+  <div class="icon">🔄</div>
+  <p><b>PUTAR HP KE POSISI MENDATAR</b></p>
+  <p>Game ini khusus mode <b style="color:#4cff9d">HORIZONTAL</b></p>
+  <p class="roArrow">⟲ putar perangkat kamu ⟳</p>
+  <small>Meja jadi lebih besar &amp; mudah dimainkan<br>Di PC: perbesar/maksimalkan jendela browser</small>
+  <button class="roX" id="rotClose" type="button">✕ Lewati</button>
+</div>
+<div class="topbar" id="topbar">
+<header>
+  <div class="logo">TARKAM<span> BILLIARD</span></div>
+  <div class="hud">
+    <span class="pcard active" id="card0"><b id="n0">Pemain 1</b><i id="g0">Terbuka</i></span>
+    <span id="turnLbl">Giliran Pemain 1</span>
+    <span class="pcard" id="card1"><b id="n1">Pemain 2</b><i id="g1">Terbuka</i></span>
+  </div>
+  <div class="menuBtns">
+    <button class="btn alt" id="btnOpp" type="button">Ganti Lawan</button>
+    <button class="btn" type="button" onclick="newGame()">Game Baru</button>
+    <button class="btn" type="button" onclick="openHelp()">Cara Bermain</button>
+    <button class="btn alt" id="btnGagang" type="button">Gagang: Stik</button>
+    <button class="btn alt" id="btnCheat" type="button">Cheat</button>
+    <button class="btn alt" id="btnSnd" type="button">🔊 Suara</button>
+    <button class="btn alt" id="btnExit" type="button">⏻ Keluar</button>
+  </div>
+  <div class="quickBtns">
+    <button class="ibtn" id="btnNewQ" type="button" title="Game Baru" onclick="newGame()">🎲</button>
+    <button class="ibtn" id="btnOppQ" type="button" title="Ganti Lawan">👥</button>
+    <button class="ibtn" id="btnHelpQ" type="button" title="Cara Bermain" onclick="openHelp()">❓</button>
+    <button class="ibtn" id="btnGagangQ" type="button" title="Ganti Gagang">🎯</button>
+    <button class="ibtn" id="btnSndQ" type="button" title="Suara">🔊</button>
+  </div>
+  <button class="btn menuBtn" type="button" onclick="toggleMenu()">☰ Menu</button>
+</header>
+<div class="ticker" id="ticker" aria-label="Berita bilyar">
+  <span class="tkBadge"><i class="tkKat">Kategori: </i>Absurd &amp; Dramatis</span>
+  <div class="tkWin">
+    <div class="tkTrack" id="tkTrack">
+      <span class="tkItem">Tutorial Merebut Bola 9 dari Tangan Teman yang Haus Kemenangan</span><i class="tkDot">•</i>
+      <span class="tkItem">Bola 9 Diincar, Jantungku Berdebar, Stik Biliar Gemetar</span><i class="tkDot">•</i>
+      <span class="tkItem">BOLA 9 SUDAH MATANG DI DEPAN LUBANG POJOK!</span><i class="tkDot">•</i>
+      <span class="tkItem">Biliar Survival: Amankan Bola 9 Sebelum Dicolong Kawan</span><i class="tkDot">•</i>
+      <span class="tkItem">Konspirasi Bola 9: Siapa Cepat Dia yang Paling Serakah</span><i class="tkDot">•</i>
+    </div>
+  </div>
+</div>
+</div>
+<div id="menuPanel">
+  <div class="mpHead"><span>MENU</span><button class="mpX" id="btnMenuClose" type="button" title="Tutup menu">✕</button></div>
+  <button class="btn alt" id="btnOppM" type="button">Ganti Lawan</button>
+  <button class="btn" type="button" onclick="newGame();toggleMenu()">Game Baru</button>
+  <button class="btn" type="button" onclick="openHelp();toggleMenu()">Cara Bermain</button>
+  <button class="btn alt" id="btnGagangM" type="button">Gagang: Stik</button>
+  <button class="btn alt" id="btnCheatM" type="button">Cheat</button>
+  <button class="btn alt" id="btnSndM" type="button">🔊 Suara</button>
+  <button class="btn alt" id="btnExitM" type="button">⏻ Keluar</button>
+</div>
+<main id="stage">
+  <canvas id="gc"></canvas>
+  <div class="shop shopL">
+    <div class="cuePanel" id="cuePanel">
+      <div class="cueTitle">PILIH GAGANG</div>
+      <div class="cueGrid">
+        <button class="cueOpt on" type="button" data-cue="stik">
+          <svg viewBox="0 0 64 18" aria-hidden="true">
+            <polygon points="9,6.2 53,7.9 53,10.1 9,11.8" fill="#dcae6e"/>
+            <polygon points="11,7.4 51,8.6 51,9.4 11,10.6" fill="#f0d3a3" opacity=".7"/>
+            <rect x="9" y="5.9" width="2.2" height="6.2" fill="#e94560"/>
+            <rect x="1.6" y="5.2" width="7.6" height="7.6" rx="1" fill="#16273c"/>
+            <rect x="53" y="7.4" width="3.4" height="3.2" fill="#f4f7fb"/>
+            <rect x="56.4" y="7.7" width="3.4" height="2.6" rx="1" fill="#3aa0ff"/>
+          </svg>
+          <span>Stik</span>
+        </button>
+        <button class="cueOpt" type="button" data-cue="lidi">
+          <svg viewBox="0 0 64 18" aria-hidden="true">
+            <rect x="2" y="5.4" width="4.4" height="7.2" rx="1" fill="#8a5a2b"/>
+            <g stroke-width="1.5" stroke-linecap="round">
+              <path d="M6.4 7 L42 6.6" stroke="#c9954c"/>
+              <path d="M6.4 9 L42 9" stroke="#e3bd7d"/>
+              <path d="M6.4 11 L42 11.4" stroke="#c9954c"/>
+            </g>
+            <path d="M15 5.6 v6.8 M25 5.6 v6.8" stroke="#3a2410" stroke-width="1.8"/>
+            <g stroke-width="1" stroke-linecap="round" fill="none">
+              <path d="M42 6.6 Q52 5.4 60 4.6" stroke="#e8d6a8"/>
+              <path d="M42 7.8 Q52 7.4 60 7.2" stroke="#d3b678"/>
+              <path d="M42 9 Q52 9 60 9.2" stroke="#e8d6a8"/>
+              <path d="M42 10.2 Q52 10.8 60 11.2" stroke="#d3b678"/>
+              <path d="M42 11.4 Q52 12.8 60 13.6" stroke="#e8d6a8"/>
+            </g>
+          </svg>
+          <span>Lidi</span>
+        </button>
+        <button class="cueOpt" type="button" data-cue="cangkul">
+          <svg viewBox="0 0 64 18" aria-hidden="true">
+            <rect x="3" y="7.2" width="49" height="3.6" rx="1.6" fill="#a4702f"/>
+            <rect x="5" y="7.6" width="45" height="1.2" fill="#d9a866" opacity=".65"/>
+            <rect x="50" y="6.6" width="6" height="4.8" rx="1" fill="#9aa7b4"/>
+            <polygon points="55,2.4 61,3.8 61,14.2 55,15.6" fill="#dfe7ef" stroke="#5c6875" stroke-width="1"/>
+            <path d="M60.4 4.6 v8.8" stroke="#fff" stroke-width="1.2"/>
+          </svg>
+          <span>Cangkul</span>
+        </button>
+        <button class="cueOpt" type="button" data-cue="sekop">
+          <svg viewBox="0 0 64 18" aria-hidden="true">
+            <rect x="14" y="7.3" width="32" height="3.4" rx="1.5" fill="#b9813a"/>
+            <rect x="16" y="7.6" width="28" height="1.1" fill="#dfae72" opacity=".7"/>
+            <path d="M14 6.6 L4 4.6 M14 11.4 L4 13.4 M4 4.6 v8.8" stroke="#e94560" stroke-width="2.2" stroke-linecap="round" fill="none"/>
+            <rect x="44" y="6.4" width="4" height="5.2" rx="1" fill="#9aa7b4"/>
+            <polygon points="47,6.4 56,5.2 63,9 56,12.8 47,11.6" fill="#dfe7ef" stroke="#5c6875" stroke-width="1"/>
+            <path d="M49 9 h11" stroke="#fff" stroke-width="1.1"/>
+          </svg>
+          <span>Sekop</span>
+        </button>
+      </div>
+    </div>
+  </div>
+  <div id="powerWrap"><div id="powerBar"></div></div>
+  <div id="msg"></div>
+  <div id="hint">Tarik layar untuk bidik, makin jauh makin kuat</div>
+  <div id="touchBar">
+    <div id="powerCtl">
+      <span class="pwLbl">TENAGA</span>
+      <input type="range" id="powerSlider" min="0" max="100" step="1" value="0" aria-label="Tenaga pukulan">
+      <span id="powerNum">0%</span>
+    </div>
+    <button id="fireBtn" type="button">TEMBAK</button>
+  </div>
+</main>
+
+<div id="quitScreen">
+  <p class="qLogo">TARKAM <span>BILLIARD</span></p>
+  <h2>SAMPAI JUMPA!</h2>
+  <p>Kamu keluar dari permainan.<br>Lawan: <b id="qOpp">-</b> &nbsp;•&nbsp; Mode: <b id="qMode">BOLA 8</b></p>
+  <div class="qBtns">
+    <button class="btn" id="qAgain" type="button">▶ Main Lagi</button>
+    <button class="btn alt" id="qPicker" type="button">👥 Ganti Lawan</button>
+    <button class="btn alt" id="qClose" type="button">⏻ Tutup Tab</button>
+  </div>
+  <p class="qNote" id="qNote"></p>
+</div>
+
+<div id="pickOverlay">
+  <div class="pickBox">
+    <p class="gameTitle">TARKAM <span>BILLIARD</span></p>
+    <h2>PILIH LAWAN</h2>
+    <p class="pickSub">Pilih lawanmu sebelum mulai bermain</p>
+    <div class="modeSel" id="modeSel">
+      <span class="mlab">MODE</span>
+      <button class="modeBtn" type="button" data-gm="8">BOLA 8</button>
+      <button class="modeBtn" type="button" data-gm="9">BOLA 9</button>
+    </div>
+    <div class="pickGrid" id="pickGrid"></div>
+    <p class="pickNote">Kamu bermain sebagai <b>Kamu</b> — tarik layar untuk bidik &amp; tenaga, lepas untuk memukul.</p>
+    <div class="pickFoot"><button class="btn alt" id="btnPickClose" type="button" style="display:none">Batal</button></div>
+  </div>
+</div>
+
+<script>
+// ============ SETUP KANVAS ============
+const canvas = document.getElementById('gc');
+const ctx = canvas.getContext('2d');
+let dpr = 1, scale = 1, ox = 0, oy = 0, cw = 0, ch = 0;
+
+function resize() {
+  dpr = Math.min(window.devicePixelRatio || 1, 2);
+  const r = canvas.parentElement.getBoundingClientRect();
+  cw = r.width; ch = r.height;
+  canvas.width = Math.round(cw * dpr);
+  canvas.height = Math.round(ch * dpr);
+  canvas.style.width = cw + 'px';
+  canvas.style.height = ch + 'px';
+  const PAD = 12;
+  // topbar menumpuk di atas kanvas, jadi ruang aman dihitung dari tingginya.
+  // Ruang bawah: seluruh meja (rail termasuk) harus berada DI ATAS bar kontrol,
+  // sehingga meja tampil full dan tidak ada bagian yang tertutup.
+  const tbEl = document.getElementById('topbar');
+  const top0 = (tbEl ? tbEl.getBoundingClientRect().height : 0) + PAD;
+  let botRes = 64;
+  if (touchMode) {
+    const tBar = document.getElementById('touchBar');
+    const bh = tBar ? tBar.getBoundingClientRect().height : 0;
+    botRes = (bh > 0 ? bh : 96) + 8;
+  }
+  const ah = Math.max(90, ch - top0 - botRes - PAD);
+  // poster samping sudah dihapus: hanya panel gagang kiri yang masih butuh ruang (kanan bebas)
+  const showSide = (cw >= 1120 && ah >= 430);
+  const wantLeft = showSide ? 165 : 0;
+  const wantRight = 0;
+  scale = Math.min((cw - wantLeft - wantRight - 2 * PAD) / (PW + 2 * RAIL), (ah - 6) / (PH + 2 * RAIL));
+  if (!(scale > 0)) scale = 1;
+  ox = wantLeft + (cw - wantLeft - wantRight - (PW + 2 * RAIL) * scale) / 2 + RAIL * scale;
+  oy = top0 + (ah - (PH + 2 * RAIL) * scale) / 2 + RAIL * scale - 4;
+  document.getElementById('stage').classList.toggle('hasSide', showSide);
+}
+function toTable(cx, cy) {
+  return { x: (cx - ox) / scale, y: (cy - oy) / scale };
+}
+
+// ============ KONSTANTA ============
+const PW = 200, PH = 100, RAIL = 13, R = 2.6;
+const FR = 36, EB = 0.955, EW = 0.8, VMIN = 50, VMAX = 330, PULL = 55;
+const HSTEP = 1 / 240;
+const POCKETS = [
+  { x: 0, y: 0, r: 6.6 },
+  { x: PW / 2, y: -1.0, r: 5.8 },
+  { x: PW, y: 0, r: 6.6 },
+  { x: 0, y: PH, r: 6.6 },
+  { x: PW / 2, y: PH + 1.0, r: 5.8 },
+  { x: PW, y: PH, r: 6.6 }
+];
+const COL = {
+  1: '#ffc400', 2: '#1552c8', 3: '#d92b2b', 4: '#6c2bd0', 5: '#ff7a00',
+  6: '#0f8a3d', 7: '#8f1616', 8: '#141414', 9: '#ffc400', 10: '#1552c8',
+  11: '#d92b2b', 12: '#6c2bd0', 13: '#ff7a00', 14: '#0f8a3d', 15: '#8f1616'
+};
+
+// ============ STATE ============
+let balls = [];
+let phase = 'aim';           // aim | roll | hand | over
+let aimAng = 0, power = 0, dragging = false, touchMode = false;
+let ghostPt = null, ghostOK = false;
+let shot = null, breakShot = true;
+const OPPONENTS = [
+    { id: 'edo', name: 'Edo', tag: 'SULIT', tagCls: 't-hard', desc: 'Pemain akurat & agresif, jarang melakukan kesalahan.', skill: 0.45, miss: 0.07, placeMiss: 0.1, think: 1 },
+    { id: 'galih', name: 'Galih', tag: 'SEDANG', tagCls: 't-normal', desc: 'Keberuntungan 100% — pukulannya murni mengandalkan hoki.', skill: 0.85, miss: 0.16, placeMiss: 0.2, think: 1.1 },
+    { id: 'ochim', name: 'Ochim', tag: 'MUDAH', tagCls: 't-easy', desc: 'Santai, kadang meleset dan salah mengatur tenaga.', skill: 1.5, miss: 0.3, placeMiss: 0.4, think: 1.25 },
+    { id: 'rafliiii', name: 'Rafliiii', tag: 'LEGEND', tagCls: 't-legend', desc: 'Pemain top markotop, tak terkalahkan!', skill: 2.6, miss: 0.5, placeMiss: 0.7, think: 1.4 }
+];
+let oppIndex = 0, pickOpen = false, started = false, gameMode = 8, rotTipShown = false;
+const CUE_STYLES = [
+  { id: 'stik', label: 'Stik' },
+  { id: 'lidi', label: 'Sapu Lidi' },
+  { id: 'cangkul', label: 'Cangkul' },
+  { id: 'sekop', label: 'Sekop' }
+];
+let cueStyle = 'stik';
+let cheatOn = false, modalOpen = false, cheatBuf = '', simulating = false;
+let quitMode = false;
+let players = [{ name: 'Kamu', group: null }, { name: 'Edo', group: null }];
+let turn = 0;
+let aiTimer = -1, aiShot = false;
+let acc = 0, msgTimer = 0, sndCount = 0;
+let muted = false, actx = null;
+let lastPt = { x: 0, y: 0, has: false };
+
+const powerWrap = document.getElementById('powerWrap');
+const powerBar = document.getElementById('powerBar');
+const msgEl = document.getElementById('msg');
+const hintEl = document.getElementById('hint');
+const powerSlider = document.getElementById('powerSlider');
+const powerNum = document.getElementById('powerNum');
+const fireBtn = document.getElementById('fireBtn');
+
+// ============ UTIL ============
+function clamp(v, a, b) { return v < a ? a : (v > b ? b : v); }
+// mode sentuh (HP): bidik dengan menyeret meja, tenaga lewat slider, tembak pakai tombol
+function setTouchMode(on) {
+  touchMode = !!on;
+  document.body.classList.toggle('touchOn', touchMode);
+  if (touchMode) {
+    const p = Math.round(power * 100);
+    powerSlider.value = p; powerNum.textContent = p + '%';
+  }
+  updateHUD();
+  resize();
+}
+function roundRect(x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + w - r, y);
+  ctx.arcTo(x + w, y, x + w, y + r, r);
+  ctx.lineTo(x + w, y + h - r);
+  ctx.arcTo(x + w, y + h, x + w - r, y + h, r);
+  ctx.lineTo(x + r, y + h);
+  ctx.arcTo(x, y + h, x, y + h - r, r);
+  ctx.lineTo(x, y + r);
+  ctx.arcTo(x, y, x + r, y, r);
+  ctx.closePath();
+}
+function showMsg(txt, dur) {
+  msgEl.textContent = txt;
+  msgEl.style.opacity = '1';
+  msgTimer = dur || 1.8;
+}
+function toggleMenu() { document.getElementById('menuPanel').classList.toggle('show'); }
+function closeRot() {
+  document.body.classList.add('rotOff');
+  try { localStorage.setItem('bilyar8rot', '1'); } catch (e) {}
+}
+// ============ KELUAR DARI GAME ============
+function clearModals() {
+  document.querySelectorAll('.modal').forEach(function (m) { m.remove(); });
+  modalOpen = false;
+}
+function askExit() {
+  if (document.getElementById('quitScreen').classList.contains('show')) return;
+  const old = document.querySelector('.modal'); if (old) old.remove();
+  modalOpen = true;
+  aiTimer = -1;
+  const m = document.createElement('div');
+  m.className = 'modal';
+  m.id = 'exitModal';
+  m.innerHTML = '<div class="modalBox">' +
+    '<h2>KELUAR DARI GAME?</h2>' +
+    '<p style="text-align:center">Permainan yang sedang berjalan akan <span class="k">berhenti</span>.<br>Kamu bisa mulai lagi kapan saja.</p>' +
+    '<div class="pickFoot">' +
+    '<button class="btn alt" id="exitNo" type="button">Lanjut Main</button>' +
+    '<button class="btn" id="exitYes" type="button">Ya, Keluar</button>' +
+    '</div></div>';
+  document.body.appendChild(m);
+  document.getElementById('exitNo').addEventListener('click', function () { closeExitAsk(); });
+  document.getElementById('exitYes').addEventListener('click', function () { quitGame(); });
+}
+function closeExitAsk() {
+  const m = document.getElementById('exitModal');
+  if (m) m.remove();
+  modalOpen = false;
+  scheduleAI();
+}
+function quitGame() {
+  const m = document.getElementById('exitModal');
+  if (m) m.remove();
+  modalOpen = false;
+  quitMode = true;
+  aiTimer = -1;
+  aiShot = false;
+  phase = 'over';
+  power = 0;
+  dragging = false;
+  updateHUD();
+  const n = document.getElementById('qNote');
+  if (n) n.textContent = '';
+  document.getElementById('quitScreen').classList.add('show');
+}
+function quitAgain() {
+  clearModals();
+  document.getElementById('quitScreen').classList.remove('show');
+  quitMode = false;
+  newGame();
+}
+function quitToPicker() {
+  clearModals();
+  document.getElementById('quitScreen').classList.remove('show');
+  quitMode = false;
+  if (started) { showPicker(); newGame(); } else newGame();
+}
+function quitCloseTab() {
+  try { window.close(); } catch (e) {}
+  const n = document.getElementById('qNote');
+  if (n) n.textContent = 'Browser memblokir tab tertutup otomatis → tutup manual (✕) ya.';
+}
+document.addEventListener('click', function (e) {
+  const p = document.getElementById('menuPanel');
+  if (p.classList.contains('show') && !e.target.closest('header') && !e.target.closest('#menuPanel')) p.classList.remove('show');
+});
+
+// ============ AUDIO ============
+function initAudio() {
+  if (!actx) {
+    try {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (AC) actx = new AC();
+    } catch (e) { actx = null; }
+  }
+  if (actx && actx.state === 'suspended') actx.resume();
+}
+function sfx(freq, dur, vol) {
+  if (muted || !actx || sndCount > 5) return;
+  sndCount++;
+  try {
+    const t = actx.currentTime;
+    const o = actx.createOscillator(), g = actx.createGain();
+    o.type = 'triangle';
+    o.frequency.setValueAtTime(freq, t);
+    g.gain.setValueAtTime(Math.max(0.001, vol), t);
+    g.gain.exponentialRampToValueAtTime(0.001, t + dur);
+    o.connect(g); g.connect(actx.destination);
+    o.start(t); o.stop(t + dur);
+  } catch (e) {}
+}
+function toggleSound() {
+  muted = !muted;
+  const t = muted ? '🔇 Suara' : '🔊 Suara';
+  document.getElementById('btnSnd').textContent = t;
+  document.getElementById('btnSndM').textContent = t;
+  const q = document.getElementById('btnSndQ');
+  if (q) { q.textContent = muted ? '🔇' : '🔊'; q.title = muted ? 'Suara mati' : 'Suara hidup'; }
+  saveOpt();
+}
+function curOpp() { return OPPONENTS[oppIndex]; }
+function cueLabel(id) { for (const c of CUE_STYLES) if (c.id === id) return c.label; return 'Stik'; }
+function refreshCueBtn() {
+  const t = 'Gagang: ' + cueLabel(cueStyle);
+  document.getElementById('btnGagang').textContent = t;
+  document.getElementById('btnGagangM').textContent = t;
+  document.querySelectorAll('#cuePanel .cueOpt').forEach(function (b) {
+    b.classList.toggle('on', b.getAttribute('data-cue') === cueStyle);
+  });
+}
+function setCueStyle(id) {
+  let ok = false;
+  for (const c of CUE_STYLES) if (c.id === id) ok = true;
+  if (!ok) return;
+  cueStyle = id;
+  saveOpt();
+refreshCueBtn();
+(function () {
+  var tr = document.getElementById('tkTrack');
+  if (tr && !tr.getAttribute('data-dup')) {
+    tr.innerHTML = tr.innerHTML + tr.innerHTML;
+    tr.setAttribute('data-dup', '1');
+  }
+})();
+}
+function nextCue() {
+  let i = 0;
+  for (let k = 0; k < CUE_STYLES.length; k++) if (CUE_STYLES[k].id === cueStyle) i = k;
+  setCueStyle(CUE_STYLES[(i + 1) % CUE_STYLES.length].id);
+  showMsg('Gagang dipakai: ' + cueLabel(cueStyle), 1.6);
+}
+function saveOpt() { try { localStorage.setItem('bilyar8', JSON.stringify({ muted: muted, opp: OPPONENTS[oppIndex].id, mode: gameMode, cue: cueStyle })); } catch (e) {} }
+function loadOpt() {
+  try {
+    const d = JSON.parse(localStorage.getItem('bilyar8'));
+    if (d) {
+      muted = !!d.muted;
+      if (d.mode === 9 || d.mode === 8) gameMode = d.mode;
+      if (typeof d.cue === 'string') { for (const c of CUE_STYLES) if (c.id === d.cue) cueStyle = d.cue; }
+      if (d.opp) { for (let i = 0; i < OPPONENTS.length; i++) if (OPPONENTS[i].id === d.opp) oppIndex = i; }
+    }
+  } catch (e) {}
+}
+
+// ============ ATUR BOLA ============
+function groupOf(b) { return (b.num >= 1 && b.num <= 7) ? 'solid' : (b.num >= 9 && b.num <= 15 ? 'stripe' : 'eight'); }
+function otherGroup(g) { return g === 'solid' ? 'stripe' : 'solid'; }
+function countRemaining(g) {
+  let n = 0;
+  for (const b of balls) if (!b.potted && groupOf(b) === g) n++;
+  return n;
+}
+function makeBall(num, x, y) {
+  return { num: num, x: x, y: y, vx: 0, vy: 0, potted: false };
+}
+function rackOrder() {
+  function shuffle(a) {
+    for (let i = a.length - 1; i > 0; i--) { const j = (Math.random() * (i + 1)) | 0; const t = a[i]; a[i] = a[j]; a[j] = t; }
+    return a;
+  }
+  if (gameMode === 9) {
+    // wajik: slot 0 = apex (bola 1), slot 4 = tengah (bola 9)
+    const slots = new Array(9).fill(0);
+    const rest = shuffle([2, 3, 4, 5, 6, 7, 8]);
+    slots[0] = 1; slots[4] = 9;
+    let k = 0;
+    for (let i = 0; i < 9; i++) if (slots[i] === 0) slots[i] = rest[k++];
+    return slots;
+  }
+  const slots = new Array(15).fill(0);
+  const solids = [2, 3, 4, 5, 6, 7], stripes = [9, 10, 11, 12, 13, 14, 15];
+  shuffle(solids); shuffle(stripes);
+  // slot: row0=0 | row1=1,2 | row2=3,4,5 | row3=6..9 | row4=10..14
+  slots[0] = 1;                    // apex = bola 1
+  slots[4] = 8;                    // tengah = bola 8
+  slots[10] = solids.pop();        // sudut belakang kiri = solid
+  slots[14] = stripes.pop();       // sudut belakang kanan = strip
+  const rest = solids.concat(stripes);
+  shuffle(rest);
+  let k = 0;
+  for (let i = 0; i < 15; i++) if (slots[i] === 0) slots[i] = rest[k++];
+  return slots;
+}
+function rack() {
+  balls = [makeBall(0, PW * 0.25, PH / 2)];
+  const seq = rackOrder();
+  const counts = gameMode === 9 ? [1, 2, 3, 2, 1] : [1, 2, 3, 4, 5];
+  const apexX = PW * 0.72, gap = 0.05;
+  const dx = (R * Math.sqrt(3)) + gap;
+  const dy = (2 * R) + gap;
+  let k = 0;
+  for (let row = 0; row < counts.length; row++) {
+    for (let j = 0; j < counts[row]; j++) {
+      const x = apexX + row * dx;
+      const y = PH / 2 + (j - (counts[row] - 1) / 2) * dy;
+      balls.push(makeBall(seq[k++], x, y));
+    }
+  }
+}
+function lowestBall() {
+  let low = null;
+  for (const b of balls) if (!b.potted && b.num >= 1 && (!low || b.num < low.num)) low = b;
+  return low;
+}
+function legalTargets(pi) {
+  if (gameMode === 9) {
+    const low = lowestBall();
+    return low ? [low] : [];
+  }
+  const objs = balls.filter(function (b) { return !b.potted && b.num >= 1; });
+  const g = players[pi].group;
+  if (g) {
+    const rem = objs.filter(function (b) { return groupOf(b) === g; });
+    if (rem.length) return rem;
+    return balls.filter(function (b) { return !b.potted && b.num === 8; });
+  }
+  return objs.filter(function (b) { return b.num !== 8; });
+}
+function defaultAim(pi) {
+  const cue = balls[0];
+  if (cue.potted) return;
+  const ts = legalTargets(pi);
+  let best = null, bd = 1e9;
+  for (const t of ts) {
+    const d = Math.hypot(t.x - cue.x, t.y - cue.y);
+    if (d < bd) { bd = d; best = t; }
+  }
+  aimAng = best ? Math.atan2(best.y - cue.y, best.x - cue.x) : 0;
+}
+
+// ============ HUD ============
+function groupLabel(pi) {
+  if (gameMode === 9) {
+    const low = lowestBall();
+    let n = 0;
+    for (const b of balls) if (!b.potted && b.num >= 1) n++;
+    return low ? ('Wajib bola ' + low.num + ' • sisa ' + n) : 'Bola 9';
+  }
+  const g = players[pi].group;
+  if (!g) return 'Terbuka';
+  return (g === 'solid' ? 'Solid 1-7' : 'Strip 9-15') + ' • sisa ' + countRemaining(g);
+}
+function updateHUD() {
+  document.getElementById('n0').textContent = cheatOn ? 'Kamu (CHEAT)' : players[0].name;
+  document.getElementById('n1').textContent = players[1].name;
+  document.getElementById('g0').textContent = groupLabel(0);
+  document.getElementById('g1').textContent = groupLabel(1);
+  document.getElementById('card0').classList.toggle('active', turn === 0);
+  document.getElementById('card1').classList.toggle('active', turn === 1);
+  document.getElementById('turnLbl').textContent = phase === 'over' ? 'Permainan Selesai' : 'Giliran ' + players[turn].name;
+  let h = '';
+  if (phase === 'over') h = 'Tekan "Game Baru" atau pilih lawan baru';
+  else if (phase === 'hand') h = 'Bola di tangan: ketuk meja untuk menaruh bola putih';
+  else if (phase === 'roll') h = 'Bola bergerak...';
+  else if (turn === 1) h = players[1].name + ' sedang membidik...';
+  else if (cheatOn) h = 'CHEAT AKTIF — bidikan otomatis ke lubang';
+  else if (touchMode) h = 'Seret = bidik • TENAGA lalu TEMBAK';
+  else h = 'Tarik layar untuk bidik & tenaga • lepas untuk memukul';
+  hintEl.textContent = h;
+  document.body.classList.toggle('aimUI', phase === 'aim' && turn === 0);
+  if (fireBtn) fireBtn.disabled = !(phase === 'aim' && turn === 0);
+}
+
+// ============ GAME FLOW ============
+function newGame() {
+  quitMode = false;
+  const q = document.getElementById('quitScreen');
+  if (q) q.classList.remove('show');
+  players = [
+    { name: 'Kamu', group: null },
+    { name: curOpp().name, group: null }
+  ];
+  turn = 0;
+  breakShot = true;
+  shot = null;
+  power = 0; dragging = false;
+  aiTimer = -1; aiShot = false;
+  rack();
+  phase = 'aim';
+  defaultAim(0);
+  updateHUD();
+  showMsg(gameMode === 9 ? 'Break Bola 9!' : 'Break!', 1.4);
+}
+// ============ PILIH LAWAN ============
+function buildPicker() {
+  const g = document.getElementById('pickGrid');
+  let html = '';
+  for (const o of OPPONENTS) {
+    html += '<button class="pickCard" type="button" data-opp="' + o.id + '">' +
+      '<b>' + o.name + '<span class="tag ' + o.tagCls + '">' + o.tag + '</span></b>' +
+      '<small>' + o.desc + '</small></button>';
+  }
+  g.innerHTML = html;
+  g.querySelectorAll('.pickCard').forEach(function (c) {
+    c.addEventListener('click', function () { startOpp(c.getAttribute('data-opp')); });
+  });
+  document.querySelectorAll('#modeSel .modeBtn').forEach(function (b) {
+    b.addEventListener('click', function () { setGameMode(Number(b.getAttribute('data-gm'))); });
+  });
+  refreshMode();
+}
+function refreshMode() {
+  document.querySelectorAll('#modeSel .modeBtn').forEach(function (b) {
+    b.classList.toggle('on', Number(b.getAttribute('data-gm')) === gameMode);
+  });
+}
+function setGameMode(m) {
+  if (m !== 8 && m !== 9) return;
+  if (gameMode === m) { refreshMode(); return; }
+  gameMode = m;
+  saveOpt();
+  refreshMode();
+  if (started) { newGame(); showMsg('Mode permainan: BOLA ' + m + '\n' + (m === 9 ? 'Masukkan bola 9 untuk menang' : 'Kelompok solid & strip'), 2.6); }
+  else showMsg('Mode: BOLA ' + m, 1.6);
+}
+function refreshPicker() {
+  document.querySelectorAll('#pickGrid .pickCard').forEach(function (c) {
+    c.style.borderColor = (c.getAttribute('data-opp') === OPPONENTS[oppIndex].id) ? '#4cff9d' : 'rgba(255,255,255,.14)';
+  });
+}
+function showPicker() {
+  pickOpen = true;
+  aiTimer = -1;
+  refreshPicker();
+  refreshMode();
+  document.getElementById('btnPickClose').style.display = started ? 'inline-flex' : 'none';
+  document.getElementById('pickOverlay').style.display = 'flex';
+}
+function hidePicker() {
+  pickOpen = false;
+  document.getElementById('pickOverlay').style.display = 'none';
+  if (!rotTipShown && window.innerHeight > window.innerWidth) {
+    rotTipShown = true;
+    setTimeout(function () { showMsg('Mode portrait aman dipakai — putar HP supaya meja lebih lapang', 3.4); }, 1700);
+  }
+}
+function startOpp(id) {
+  for (let i = 0; i < OPPONENTS.length; i++) if (OPPONENTS[i].id === id) oppIndex = i;
+  saveOpt();
+  hidePicker();
+  started = true;
+  newGame();
+  showMsg('Lawan kamu: ' + curOpp().name, 1.8);
+}
+// ============ CHEAT ============
+function activateCheat() {
+  if (cheatOn) return;
+  cheatOn = true;
+  closeCheatModal();
+  updateHUD();
+  showMsg('CHEAT AKTIF!\nBidikan otomatis diarahkan ke lubang', 3);
+  sfx(660, 0.2, 0.16);
+}
+function deactivateCheat() {
+  cheatOn = false;
+  closeCheatModal();
+  updateHUD();
+  showMsg('Cheat dimatikan', 1.6);
+}
+function closeCheatModal() {
+  const m = document.querySelector('.modal');
+  if (m) m.remove();
+  modalOpen = false;
+  scheduleAI();
+}
+function openCheat() {
+  if (document.querySelector('.modal')) return;
+  modalOpen = true;
+  aiTimer = -1;
+  const m = document.createElement('div');
+  m.className = 'modal';
+  m.innerHTML = '<div class="modalBox">' +
+    '<h2>CHEAT</h2>' +
+    '<p>Masukkan kode cheat:</p>' +
+    '<input id="cheatIn" type="text" autocomplete="off" spellcheck="false" placeholder="ketik kode di sini" style="width:100%;padding:9px;border-radius:8px;border:1px solid #2b6cb0;background:#0b1a30;color:#e9f2ff;font-size:.95em;margin-top:6px">' +
+    '<p id="cheatMsg" style="min-height:1.3em;color:#ffd76a;text-align:center"></p>' +
+    '<button class="btn" id="cheatOk" style="width:100%;height:auto;padding:9px;font-size:.9em">Aktifkan</button>' +
+    '<button class="btn alt closeModal" style="width:100%;height:auto;padding:9px;font-size:.9em;margin-top:8px" id="cheatClose">Tutup</button>' +
+    (cheatOn ? '<button class="btn alt closeModal" style="width:100%;height:auto;padding:9px;font-size:.9em;margin-top:8px" id="cheatOff">Matikan Cheat</button>' : '') +
+    '</div>';
+  document.body.appendChild(m);
+  const inp = document.getElementById('cheatIn');
+  inp.value = '';
+  setTimeout(function () { try { inp.focus(); } catch (e) {} }, 50);
+  function cek() {
+    const v = inp.value.trim().toLowerCase().replace(/\s+/g, ' ');
+    if (v === 'ochim ganteng') activateCheat();
+    else document.getElementById('cheatMsg').textContent = 'Kode salah!';
+  }
+  document.getElementById('cheatOk').addEventListener('click', cek);
+  inp.addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); cek(); } });
+  document.getElementById('cheatClose').addEventListener('click', closeCheatModal);
+  const off = document.getElementById('cheatOff');
+  if (off) off.addEventListener('click', deactivateCheat);
+}
+// --- simulasi bayangan: uji apakah tembakan ini benar-benar masuk & tidak foul ---
+function shadowPots(cue, ang, pw, targets, group, rec) {
+  const save = [];
+  for (let i = 0; i < balls.length; i++) {
+    const b = balls[i];
+    save.push({ x: b.x, y: b.y, vx: b.vx, vy: b.vy, potted: b.potted });
+  }
+  const saveShot = shot;
+  const fake = { firstHit: null, potted: [], railAfter: false, isBreak: breakShot };
+  let ok = 0;
+  // rekam jalur lintasan (untuk garis panduan cheat)
+  const recMap = {};
+  if (rec) {
+    const rb = [cue];
+    for (let i = 0; i < targets.length; i++) rb.push(targets[i]);
+    for (let i = 0; i < rb.length; i++) {
+      recMap[rb[i].num] = { b: rb[i], pts: [{ x: rb[i].x, y: rb[i].y }], lx: rb[i].x, ly: rb[i].y };
+    }
+  }
+  simulating = true;
+  try {
+    shot = fake;
+    const v = (VMIN + pw * (VMAX - VMIN));
+    cue.vx = Math.cos(ang) * v; cue.vy = Math.sin(ang) * v;
+    for (let i = 0; i < 3000; i++) {
+      step(HSTEP);
+      if (rec) {
+        for (const k in recMap) {
+          const r = recMap[k];
+          if (r.b.potted) continue;
+          const d = Math.hypot(r.b.x - r.lx, r.b.y - r.ly);
+          if (d > 0.9 && r.pts.length < 500) { r.pts.push({ x: r.b.x, y: r.b.y }); r.lx = r.b.x; r.ly = r.b.y; }
+        }
+      }
+      if (allStopped()) break;
+    }
+    const first = fake.firstHit;
+    let firstOk = false;
+    if (first) {
+      if (gameMode === 9) firstOk = targets.indexOf(first) >= 0;
+      else if (first.num === 8) firstOk = targets.indexOf(first) >= 0;
+      else firstOk = group ? groupOf(first) === group : first.num !== 8;
+    }
+    let targetIn = false, cueIn = false, eightIn = false, otherIn = false;
+    for (const b of fake.potted) {
+      if (b.num === 0) cueIn = true;
+      else if (gameMode === 9) {
+        if (b.num === 9) eightIn = true;              // bola 9 masuk = menang
+        else if (targets.indexOf(b) >= 0) targetIn = true;
+        else otherIn = true;                          // bola biasa (termasuk 8) tetap bonus
+      }
+      else if (b.num === 8) eightIn = true;
+      else if (targets.indexOf(b) >= 0) targetIn = true;
+    }
+    const eightLegal = targets.some(function (b) { return b.num === 8 || (gameMode === 9 && b.num === 9); });
+    if (eightIn) {
+      // mode 9: bola 9 masuk saat foul = dikembalikan (bukan kalah)
+      ok = (gameMode === 9) ? ((firstOk && !cueIn) ? 3 : 0)
+        : ((eightLegal && firstOk && !cueIn) ? 3 : -1);
+    }
+    else if (firstOk && targetIn && !cueIn) ok = 2;
+    else if ((targetIn || otherIn) && !cueIn) ok = 1;
+    else ok = 0;
+  } catch (e) { ok = 0; }
+  simulating = false;
+  if (rec) {
+    for (const k in recMap) {
+      const r = recMap[k];
+      const d = Math.hypot(r.b.x - r.lx, r.b.y - r.ly);
+      if (d > 0.15 && r.pts.length < 500) r.pts.push({ x: r.b.x, y: r.b.y });
+      rec[k] = r.pts;
+    }
+    rec.potted = fake.potted.slice();
+  }
+  for (let i = 0; i < balls.length; i++) {
+    const s = save[i], b = balls[i];
+    b.x = s.x; b.y = s.y; b.vx = s.vx; b.vy = s.vy; b.potted = s.potted;
+  }
+  shot = saveShot;
+  return ok;
+}
+// --- cheat: pilih sudut + power yang terbukti membuat bola masuk ---
+function cheatAim(cue) {
+  const group = players[0].group;
+  const targets = legalTargets(0);
+  if (!targets.length) return null;
+  const cands = [];
+  if (breakShot) {
+    let nd = 1e9, nb = null;
+    for (const t of targets) {
+      const d = Math.hypot(t.x - cue.x, t.y - cue.y);
+      if (d < nd) { nd = d; nb = t; }
+    }
+    if (nb) cands.push({ ang: Math.atan2(nb.y - cue.y, nb.x - cue.x), dist: nd + 40, cut: 1, brk: true, k: 1000 });
+  }
+  const bs = findBestShot(cue, targets);
+  if (bs) cands.push({ ang: bs.ang, dist: bs.dist, cut: bs.cut, k: 900 + bs.score });
+  for (const t of targets) {
+    for (const pk of POCKETS) {
+      const ddx = pk.x - t.x, ddy = pk.y - t.y;
+      const dl = Math.hypot(ddx, ddy);
+      if (dl < 0.01) continue;
+      const gx = t.x - ddx / dl * 2 * R, gy = t.y - ddy / dl * 2 * R;
+      const ax = gx - cue.x, ay = gy - cue.y;
+      const al = Math.hypot(ax, ay);
+      if (al < R * 1.2) continue;
+      const cut = (ax * ddx + ay * ddy) / (al * dl);
+      if (cut < 0.05) continue;
+      const clear1 = segClear(cue.x, cue.y, gx, gy, [t]);
+      const clear2 = segClear(t.x, t.y, pk.x, pk.y, [t]);
+      const score = cut * 2 - (al + dl) / PW;
+      cands.push({
+        ang: Math.atan2(ay, ax), dist: al + dl, cut: cut,
+        k: (clear1 && clear2 ? 200 : clear1 ? 60 : clear2 ? 40 : 0) + score
+      });
+      // tembakan pantul 1 dinding (kalau jalur lurus terhalang)
+      if (!clear1) {
+        const ms = [
+          { x: 2 * R - gx, y: gy }, { x: 2 * (PW - R) - gx, y: gy },
+          { x: gx, y: 2 * R - gy }, { x: gx, y: 2 * (PH - R) - gy }
+        ];
+        for (const m of ms) {
+          const kx = m.x - cue.x, ky = m.y - cue.y;
+          const kl = Math.hypot(kx, ky);
+          if (kl < R * 1.2) continue;
+          const kClear = segClear(cue.x, cue.y, m.x, m.y, [t]);
+          cands.push({
+            ang: Math.atan2(ky, kx), dist: kl + dl, cut: 0.4, kick: true,
+            k: (clear2 ? 100 : 0) + (kClear ? 15 : 0) + 0.8 - kl / PW
+          });
+        }
+      }
+    }
+  }
+  if (!cands.length) return null;
+  cands.sort(function (a, b) { return b.k - a.k; });
+  let fb1 = null, fb0 = null, fbM1 = null;
+  let sims = 0;
+  for (let i = 0; i < cands.length && sims < 64; i++) {
+    const c = cands[i];
+    const p1 = c.brk ? 1 : clamp(0.34 + (c.dist / PW) * 0.55 + (1 - c.cut) * 0.35, 0.3, 1);
+    const tries = (c.brk || p1 >= 0.98) ? [p1] : [p1, 1];
+    for (let k = 0; k < tries.length && sims < 64; k++) {
+      sims++;
+      const res = { ang: c.ang, power: tries[k], verified: false, n: cands.length };
+      const s = shadowPots(cue, c.ang, tries[k], targets, group);
+      if (s >= 2) { res.verified = true; return res; }
+      if (s === 1 && !fb1) fb1 = res;
+      else if (s === 0 && !fb0) fb0 = res;
+      else if (s < 0 && !fbM1) fbM1 = res;
+    }
+  }
+  return fb1 || fb0 || fbM1;
+}
+// --- cheat: saat bola di tangan, pindahkan ke posisi yang bisa ditembak masuk ---
+function cheatVerified(cue) {
+  const a = cheatAim(cue);
+  return !!(a && a.verified);
+}
+function cheatPlace(x, y) {
+  const cue = balls[0];
+  if (cheatVerified(cue)) return;
+  const targets = legalTargets(0);
+  let best = null, bestN = 0;
+  for (let i = 0; i < 40; i++) {
+    const rx = R + 1 + Math.random() * (PW - 2 * R - 2);
+    const ry = R + 1 + Math.random() * (PH - 2 * R - 2);
+    if (!validPlace(rx, ry)) continue;
+    let n = 0;
+    for (const t of targets) {
+      for (const pk of POCKETS) {
+        const ddx = pk.x - t.x, ddy = pk.y - t.y;
+        const dl = Math.hypot(ddx, ddy);
+        if (dl < 0.01) continue;
+        const gx = t.x - ddx / dl * 2 * R, gy = t.y - ddy / dl * 2 * R;
+        if (segClear(t.x, t.y, pk.x, pk.y, [t]) && segClear(rx, ry, gx, gy, [t])) n++;
+      }
+    }
+    if (n > bestN) {
+      bestN = n;
+      best = { x: rx, y: ry };
+      if (n >= 4) break;
+    }
+  }
+  if (!best) return;
+  cue.x = best.x; cue.y = best.y;
+  if (cheatVerified(cue)) showMsg('CHEAT: bola dipindah ke posisi tembak!', 1.5);
+  else { cue.x = x; cue.y = y; }
+}
+function shoot() {
+  if (phase !== 'aim') return;
+  const cue = balls[0];
+  if (cue.potted) return;
+  // CHEAT: bidikan dipandu & diverifikasi simulasi (bola masuk secara fisik, bukan dipaksa)
+  if (cheatOn && turn === 0) {
+    const cs = cheatAim(cue);
+    if (cs) {
+      let dA = cs.ang - aimAng;
+      while (dA > Math.PI) dA -= Math.PI * 2;
+      while (dA < -Math.PI) dA += Math.PI * 2;
+      if (Math.abs(dA) > 0.05) showMsg(cs.verified ? 'CHEAT: bidikan dipandu ke lubang!' : 'CHEAT: bidikan dipandu!', 1.3);
+      aimAng = cs.ang;
+      power = cs.power;
+    }
+  }
+  const v = (VMIN + power * (VMAX - VMIN)) * (breakShot ? 1.12 : 1);
+  cue.vx = Math.cos(aimAng) * v;
+  cue.vy = Math.sin(aimAng) * v;
+  // mode 9: target wajib = bola terendah SAAT INI (sebelum bola dipukul/dimasukkan)
+  const lowNow = lowestBall();
+  shot = { firstHit: null, potted: [], railAfter: false, isBreak: breakShot, lowNum: (gameMode === 9 && lowNow) ? lowNow.num : null };
+  breakShot = false;
+  phase = 'roll';
+  acc = 0;
+  power = 0;
+  sfx(700, 0.05, 0.14);
+  updateHUD();
+}
+function allStopped() {
+  for (const b of balls) if (!b.potted && (b.vx !== 0 || b.vy !== 0)) return false;
+  return true;
+}
+function gameOver(winIdx, reason) {
+  phase = 'over';
+  aiTimer = -1;
+  power = 0;
+  updateHUD();
+  const existing = document.querySelector('.modal');
+  if (existing) existing.remove();
+  const m = document.createElement('div');
+  m.className = 'modal';
+  m.innerHTML = '<div class="modalBox">' +
+    '<h2>PERMAINAN SELESAI</h2>' +
+    '<p style="text-align:center;font-size:1.4em;font-weight:bold;color:#ffd700">' + players[winIdx].name + ' MENANG!</p>' +
+    '<p style="text-align:center">' + reason + '</p>' +
+    '<button class="btn closeModal" onclick="this.closest(\'.modal\').remove();newGame()">Main Lagi</button>' +
+    '<button class="btn alt closeModal" onclick="this.closest(\'.modal\').remove();showPicker()">Ganti Lawan</button>' +
+    '</div>';
+  document.body.appendChild(m);
+  sfx(880, 0.25, 0.2);
+}
+function endShot() {
+  const p = players[turn], o = players[1 - turn];
+  const s = shot || { firstHit: null, potted: [], railAfter: false, isBreak: false, lowNum: null };
+  shot = null;
+  const cue = balls[0];
+  const pottedObj = s.potted.filter(function (b) { return b.num !== 0; });
+  const scratch = s.potted.some(function (b) { return b.num === 0; });
+  const eightDown = pottedObj.some(function (b) { return b.num === 8; });
+  const nineDown = gameMode === 9 && pottedObj.some(function (b) { return b.num === 9; });
+  const pottedOwn = p.group ? pottedObj.some(function (b) { return groupOf(b) === p.group; }) : false;
+  const clearedBefore = !!p.group && !pottedOwn && countRemaining(p.group) === 0;
+  let foul = null, why = '';
+
+  // --- Foul dasar ---
+  if (scratch) { foul = 'Bola putih masuk lubang!'; }
+  else if (!s.firstHit) { foul = 'Tidak ada bola yang dipukul'; }
+  else {
+    const fh = s.firstHit;
+    if (gameMode === 9) {
+      // aturan 9-ball: wajib menyentuh bola terendah yang ada SAAT TEMBAKAN DIMULAI,
+      // bukan bola terendah sesudah bola masuk (kalau tidak, memasukkan bola terendah selalu dianggap foul)
+      const lowNum = (s.lowNum != null) ? s.lowNum : (lowestBall() ? lowestBall().num : 0);
+      if (lowNum && fh.num !== lowNum) { foul = 'Harus memukul bola ' + lowNum + ' (paling rendah) lebih dulu!'; }
+    } else if (clearedBefore) {
+      if (fh.num !== 8) { foul = 'Harus memukul bola 8!'; }
+    } else if (p.group) {
+      if (fh.num === 8) { foul = 'Bola 8 dipukul lebih dulu!'; }
+      else if (groupOf(fh) !== p.group) { foul = 'Memukul bola lawan lebih dulu!'; }
+    } else {
+      if (fh.num === 8) { foul = 'Bola 8 dipukul lebih dulu!'; }
+    }
+    if (!foul && pottedObj.length === 0 && !s.railAfter) { foul = 'Tidak ada bola yang menyentuh tepi'; }
+  }
+
+  // --- Bola 9 (mode 9 ball) ---
+  if (nineDown) {
+    if (!foul) { gameOver(turn, 'Bola 9 dimasukkan secara sah — MENANG!'); return; }
+    const nine = balls.filter(function (b) { return b.num === 9; })[0];
+    if (nine) respotBall(nine);
+    const ip = pottedObj.indexOf(nine);
+    if (ip >= 0) pottedObj.splice(ip, 1);
+  }
+
+
+  // --- Bola 8 (hanya mode bola 8; di mode 9 bola 8 adalah bola biasa) ---
+  if (eightDown && gameMode !== 9) {
+    if (s.isBreak) {
+      showMsg('Bola 8 masuk saat break! Rack ulang.', 2);
+      newGame();
+      return;
+    }
+    if (!foul && clearedBefore) gameOver(turn, 'Bola 8 dimasukkan secara sah setelah kelompoknya habis.');
+    else gameOver(1 - turn, players[turn].name + ' memasukkan bola 8 sebelum waktunya' + (foul ? ' (' + foul.toLowerCase() + ')' : '') + '.');
+    return;
+  }
+
+  // --- Buka kelompok (hanya mode bola 8) ---
+  let justAssigned = false;
+  if (gameMode !== 9 && !foul && !p.group && pottedObj.length) {
+    const first = pottedObj[0];
+    p.group = groupOf(first);
+    o.group = otherGroup(p.group);
+    justAssigned = true;
+  }
+
+  const ownPotted = p.group ? pottedObj.some(function (b) { return groupOf(b) === p.group; }) : false;
+  const keepTurn = (gameMode === 9)
+    ? (!foul && pottedObj.length > 0)
+    : (!foul && (ownPotted || (justAssigned && pottedObj.length > 0)));
+
+  if (scratch) {
+    cue.potted = false; cue.vx = 0; cue.vy = 0;
+    if (!validPlace(cue.x, cue.y)) {
+      const s = findFreeSpot(PW * 0.25, PH / 2);
+      cue.x = s.x; cue.y = s.y;
+    }
+  }
+
+  if (foul) {
+    why = foul;
+    turn = 1 - turn;
+    phase = 'hand';
+    ghostPt = { x: balls[0].x, y: balls[0].y };
+    showMsg('FOUL!\n' + foul + '\nBola di tangan ' + players[turn].name, 2.4);
+    sfx(220, 0.16, 0.16);
+  } else if (keepTurn) {
+    phase = 'aim';
+    const tot = pottedObj.length;
+    showMsg(tot ? players[turn].name + ' memasukkan ' + tot + ' bola → lanjut!' : 'Bagus!', 1.6);
+  } else {
+    turn = 1 - turn;
+    phase = 'aim';
+    showMsg(pottedObj.length ? 'Bola lawan masuk — giliran ' + players[turn].name : 'Giliran ' + players[turn].name, 1.6);
+  }
+  if (phase === 'aim') { power = 0; defaultAim(turn); }
+  updateHUD();
+  scheduleAI();
+}
+function scheduleAI() {
+  aiShot = false;
+  if (!quitMode && !pickOpen && !modalOpen && turn === 1 && (phase === 'aim' || phase === 'hand')) {
+    aiTimer = (0.9 + Math.random() * 0.5) * curOpp().think;
+  } else {
+    aiTimer = -1;
+  }
+}
+
+// ============ PELETAKAN BOLA DI TANGAN ============
+function validPlace(x, y) {
+  if (x < R + 0.6 || x > PW - R - 0.6 || y < R + 0.6 || y > PH - R - 0.6) return false;
+  for (const b of balls) {
+    if (b.potted || b.num === 0) continue;
+    if (Math.hypot(b.x - x, b.y - y) < 2 * R + 0.5) return false;
+  }
+  return true;
+}
+function respotBall(b) {
+  let x = PW * 0.72, y = PH / 2;
+  if (!validPlace(x, y)) { const f = findFreeSpot(x, y); x = f.x; y = f.y; }
+  b.x = x; b.y = y; b.vx = 0; b.vy = 0; b.potted = false;
+}
+function findFreeSpot(prefX, prefY) {
+  let best = { x: prefX, y: prefY }, bd = Infinity;
+  for (let gx = 1; gx <= 19; gx++) {
+    for (let gy = 1; gy <= 9; gy++) {
+      const x = gx * PW / 20, y = gy * PH / 10;
+      if (!validPlace(x, y)) continue;
+      const d = (x - prefX) * (x - prefX) + (y - prefY) * (y - prefY);
+      if (d < bd) { bd = d; best = { x: x, y: y }; }
+    }
+  }
+  return best;
+}
+function placeCue(x, y) {
+  if (!validPlace(x, y)) return false;
+  const cue = balls[0];
+  cue.x = x; cue.y = y; cue.potted = false; cue.vx = 0; cue.vy = 0;
+  if (cheatOn && turn === 0 && phase === 'hand') cheatPlace(x, y);
+  phase = 'aim';
+  power = 0;
+  defaultAim(turn);
+  updateHUD();
+  sfx(520, 0.05, 0.1);
+  scheduleAI();
+  return true;
+}
+
+// ============ AI ============
+function segClear(ax, ay, bx, by, ignore) {
+  const dx = bx - ax, dy = by - ay;
+  const L2 = dx * dx + dy * dy;
+  if (L2 < 0.0001) return true;
+  for (const b of balls) {
+    if (b.potted || b.num === 0) continue;
+    if (ignore && ignore.indexOf(b) >= 0) continue;
+    let t = ((b.x - ax) * dx + (b.y - ay) * dy) / L2;
+    t = clamp(t, 0, 1);
+    const px = ax + dx * t, py = ay + dy * t;
+    if (Math.hypot(b.x - px, b.y - py) < 2 * R * 0.97) return false;
+  }
+  return true;
+}
+function findBestShot(from, targets) {
+  let best = null;
+  for (const t of targets) {
+    for (const pk of POCKETS) {
+      const ddx = pk.x - t.x, ddy = pk.y - t.y;
+      const dl = Math.hypot(ddx, ddy);
+      if (dl < 0.01) continue;
+      const gx = t.x - ddx / dl * 2 * R, gy = t.y - ddy / dl * 2 * R;
+      if (!segClear(from.x, from.y, gx, gy, [t])) continue;
+      if (!segClear(t.x, t.y, pk.x, pk.y, [t])) continue;
+      const ax = gx - from.x, ay = gy - from.y;
+      const al = Math.hypot(ax, ay);
+      if (al < R * 1.2) continue;
+      const ux = ax / al, uy = ay / al;
+      const cut = ux * (ddx / dl) + uy * (ddy / dl);
+      if (cut < 0.3) continue;
+      const score = cut * 2 - (al + dl) / PW;
+      if (!best || score > best.score) best = { score: score, ang: Math.atan2(ay, ax), dist: al + dl, cut: cut };
+    }
+  }
+  return best;
+}
+function aiPlace() {
+  const opp = curOpp();
+  const targets = legalTargets(1);
+  if (Math.random() < opp.placeMiss) {
+    for (let i = 0; i < 80; i++) {
+      const rx = R + 1 + Math.random() * (PW - 2 * R - 2);
+      const ry = R + 1 + Math.random() * (PH - 2 * R - 2);
+      if (validPlace(rx, ry)) { placeCue(rx, ry); return; }
+    }
+  }
+  let best = null;
+  for (let i = 0; i < 200; i++) {
+    const x = R + 1 + Math.random() * (PW - 2 * R - 2);
+    const y = R + 1 + Math.random() * (PH - 2 * R - 2);
+    if (!validPlace(x, y)) continue;
+    const s = findBestShot({ x: x, y: y }, targets);
+    if (s && (!best || s.score > best.score)) best = { s: s, x: x, y: y };
+  }
+  if (best) placeCue(best.x, best.y);
+  else { const f = findFreeSpot(PW * 0.25, PH / 2); placeCue(f.x, f.y); }
+}
+function aiAct() {
+  if (phase === 'hand') { aiPlace(); aiTimer = 0.7; return; }
+  if (phase !== 'aim') return;
+  const opp = curOpp();
+  if (!aiShot) {
+    const cue = balls[0];
+    const targets = legalTargets(1);
+    const bad = Math.random() < opp.miss;
+    let s = targets.length ? findBestShot(cue, targets) : null;
+    let ang, pw;
+    if (s) {
+      const base = 0.012 + (s.dist / PW) * 0.022;
+      const err = base * opp.skill * (bad ? 3 : 1) * (0.75 + Math.random() * 0.5);
+      ang = s.ang + (Math.random() - 0.5) * 2 * err;
+      pw = clamp(0.34 + (s.dist / PW) * 0.55 + (1 - s.cut) * 0.22, 0.28, 1);
+      if (bad) {
+        pw = clamp(pw + (Math.random() - 0.5) * 0.4, 0.18, 1);
+        if (Math.random() < 0.35) ang += (Math.random() - 0.5) * 1.1;
+      }
+    } else {
+      let best = null, bd = 1e9;
+      for (const t of targets) {
+        const d = Math.hypot(t.x - cue.x, t.y - cue.y);
+        if (d < bd) { bd = d; best = t; }
+      }
+      if (!best) { shoot(); return; }
+      const err2 = (0.03 + (bd / PW) * 0.05) * opp.skill;
+      ang = Math.atan2(best.y - cue.y, best.x - cue.x) + (Math.random() - 0.5) * 2 * err2;
+      pw = 0.42 + (bad ? (Math.random() - 0.5) * 0.4 : 0);
+    }
+    aimAng = ang;
+    power = clamp(pw, 0.1, 1);
+    aiShot = true;
+    aiTimer = (0.7 + Math.random() * 0.4) * opp.think;
+    return;
+  }
+  aiShot = false;
+  aiTimer = -1;
+  shoot();
+}
+
+// ============ INPUT ============
+function pointerPos(e) {
+  const r = canvas.getBoundingClientRect();
+  return toTable(e.clientX - r.left, e.clientY - r.top);
+}
+function updateAim(pt, withPower) {
+  const cue = balls[0];
+  const dx = cue.x - pt.x, dy = cue.y - pt.y;
+  const d = Math.hypot(dx, dy);
+  if (d > 1.2) aimAng = Math.atan2(dy, dx);
+  if (withPower) power = clamp(d / PULL, 0, 1);
+}
+canvas.addEventListener('pointerdown', function (e) {
+  e.preventDefault();
+  initAudio();
+  if (turn === 1) return;
+  const pt = pointerPos(e);
+  lastPt = pt; lastPt.has = true;
+  if (phase === 'hand') { ghostPt = pt; placeCue(pt.x, pt.y); return; }
+  if (phase !== 'aim') return;
+  dragging = true;
+  try { canvas.setPointerCapture(e.pointerId); } catch (err) {}
+  updateAim(pt, !touchMode);
+});
+canvas.addEventListener('pointermove', function (e) {
+  const pt = pointerPos(e);
+  lastPt = pt; lastPt.has = true;
+  if (phase === 'hand') { ghostPt = pt; ghostOK = validPlace(pt.x, pt.y); return; }
+  if (phase !== 'aim') return;
+  if (turn === 1) return;
+  if (dragging) updateAim(pt, !touchMode);
+  else updateAim(pt, false);
+});
+function releaseShot(e) {
+  if (!dragging) return;
+  dragging = false;
+  try { canvas.releasePointerCapture(e.pointerId); } catch (err) {}
+  if (touchMode) return;                      // mode HP: tembak lewat tombol TEMBAK
+  if (power > 0.07 && phase === 'aim' && !(turn === 1)) shoot();
+  else power = 0;
+}
+canvas.addEventListener('pointerup', releaseShot);
+canvas.addEventListener('pointercancel', function (e) { dragging = false; power = 0; });
+canvas.addEventListener('contextmenu', function (e) { e.preventDefault(); });
+window.addEventListener('keydown', function (e) {
+  if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) return;
+  const CODE = 'ochim ganteng';
+  if (!cheatOn && e.key && e.key.length === 1) {
+    const cand = (cheatBuf + e.key.toLowerCase()).slice(-CODE.length);
+    if (CODE.indexOf(cand) === 0) {
+      cheatBuf = cand;
+      if (cheatBuf === CODE) { cheatBuf = ''; activateCheat(); }
+      return;
+    }
+    cheatBuf = '';
+  }
+  if (pickOpen || modalOpen) return;
+  if (phase !== 'aim' || (turn === 1)) return;
+  const step = e.shiftKey ? 0.002 : 0.012;
+  if (e.key === 'ArrowLeft') { aimAng -= step; e.preventDefault(); }
+  else if (e.key === 'ArrowRight') { aimAng += step; e.preventDefault(); }
+  else if (e.key === 'ArrowUp') { power = clamp(power + 0.05, 0, 1); e.preventDefault(); }
+  else if (e.key === 'ArrowDown') { power = clamp(power - 0.05, 0, 1); e.preventDefault(); }
+  else if (e.key === ' ') { if (power < 0.15) power = 0.5; shoot(); e.preventDefault(); }
+});
+
+// ============ FISIKA ============
+function potBall(b) {
+  b.potted = true;
+  b.vx = 0; b.vy = 0;
+  if (shot) shot.potted.push(b);
+  if (simulating) return;
+  if (b.num === 8) sfx(150, 0.22, 0.24);
+  else if (b.num === 0) sfx(190, 0.2, 0.2);
+  else sfx(300, 0.14, 0.16);
+}
+function railHit() {
+  if (shot && shot.firstHit) shot.railAfter = true;
+  if (simulating) return;
+  sfx(240, 0.04, 0.05);
+}
+function step(h) {
+  for (const b of balls) {
+    if (b.potted) continue;
+    if (b.vx === 0 && b.vy === 0) continue;
+    b.x += b.vx * h;
+    b.y += b.vy * h;
+    const sp = Math.hypot(b.vx, b.vy);
+    const ns = sp - FR * h;
+    if (ns < 0.05) { b.vx = 0; b.vy = 0; }
+    else { const k = ns / sp; b.vx *= k; b.vy *= k; }
+  }
+  // tabrakan bola (didahulukan agar hasil dorongan tidak mengeluarkan bola dari meja)
+  const dMin = 2 * R, dMin2 = dMin * dMin;
+  for (let i = 0; i < balls.length; i++) {
+    const a = balls[i];
+    if (a.potted) continue;
+    for (let j = i + 1; j < balls.length; j++) {
+      const b = balls[j];
+      if (b.potted) continue;
+      const dx = b.x - a.x, dy = b.y - a.y;
+      const d2 = dx * dx + dy * dy;
+      if (d2 >= dMin2 || d2 === 0) continue;
+      const d = Math.sqrt(d2);
+      const nx = dx / d, ny = dy / d;
+      const ov = (dMin - d) * 0.5;
+      a.x -= nx * ov; a.y -= ny * ov;
+      b.x += nx * ov; b.y += ny * ov;
+      const vn = (b.vx - a.vx) * nx + (b.vy - a.vy) * ny;
+      if (vn < 0) {
+        const imp = -(1 + EB) * vn / 2;
+        a.vx -= imp * nx; a.vy -= imp * ny;
+        b.vx += imp * nx; b.vy += imp * ny;
+        if (shot && !shot.firstHit) {
+          if (a.num === 0) { shot.firstHit = b; shot.railAfter = false; }
+          else if (b.num === 0) { shot.firstHit = a; shot.railAfter = false; }
+        }
+        sfx(420 + Math.random() * 420, 0.05, Math.min(0.2, Math.abs(vn) / 900));
+      }
+    }
+  }
+  // lubang (setelah tabrakan: bola yang tersorong masuk lubang ikut jatuh)
+  for (const b of balls) {
+    if (b.potted) continue;
+    for (const pk of POCKETS) {
+      const dx = b.x - pk.x, dy = b.y - pk.y;
+      if (dx * dx + dy * dy < pk.r * pk.r) { potBall(b); break; }
+    }
+  }
+  // tepi meja (terakhir: selalu merapikan posisi bola)
+  for (const b of balls) {
+    if (b.potted) continue;
+    if (b.x < R) { b.x = R; if (b.vx < 0) { b.vx = -b.vx * EW; b.vy *= 0.99; railHit(); } }
+    else if (b.x > PW - R) { b.x = PW - R; if (b.vx > 0) { b.vx = -b.vx * EW; b.vy *= 0.99; railHit(); } }
+    if (b.y < R) { b.y = R; if (b.vy < 0) { b.vy = -b.vy * EW; b.vx *= 0.99; railHit(); } }
+    else if (b.y > PH - R) { b.y = PH - R; if (b.vy > 0) { b.vy = -b.vy * EW; b.vx *= 0.99; railHit(); } }
+  }
+}
+
+// ============ UPDATE ============
+function update(dt) {
+  if (msgTimer > 0) {
+    msgTimer -= dt;
+    if (msgTimer <= 0) msgEl.style.opacity = '0';
+  }
+  if (phase === 'roll') {
+    acc += dt;
+    let n = 0;
+    while (acc >= HSTEP && n < 80) { step(HSTEP); acc -= HSTEP; n++; }
+    if (n >= 80) acc = 0;
+    if (allStopped()) endShot();
+  } else acc = 0;
+
+  if (!pickOpen && !modalOpen && aiTimer > 0) {
+    aiTimer -= dt;
+    if (aiTimer <= 0) { aiTimer = -1; aiAct(); }
+  }
+
+  const showP = power > 0.004;
+  powerWrap.style.display = showP ? 'block' : 'none';
+  if (showP) powerBar.style.width = (power * 100).toFixed(0) + '%';
+  if (touchMode) {
+    const pv = Math.round(power * 100), pt = pv + '%';
+    if (powerSlider.value !== '' + pv) powerSlider.value = pv;
+    if (powerNum.textContent !== pt) powerNum.textContent = pt;
+  }
+}
+
+// ============ RENDER ============
+function drawTable() {
+  const wx = -RAIL, wy = -RAIL, ww = PW + 2 * RAIL, wh = PH + 2 * RAIL;
+  // pseudo-random tetap (agar tidak berkedip tiap frame)
+  function pr(i) { const s = Math.sin(i * 127.1 + 11.7) * 43758.5453; return s - Math.floor(s); }
+
+  // ===== bodi mesin: besi tuang =====
+  roundRect(wx, wy, ww, wh, 6);
+  const wg = ctx.createLinearGradient(0, wy, 0, wy + wh);
+  wg.addColorStop(0, '#7d868d'); wg.addColorStop(0.05, '#4b545b');
+  wg.addColorStop(0.5, '#333a41'); wg.addColorStop(0.95, '#272d33');
+  wg.addColorStop(1, '#161b1f');
+  ctx.fillStyle = wg; ctx.fill();
+  ctx.strokeStyle = '#0c0f12'; ctx.lineWidth = 1.2; ctx.stroke();
+
+  // goresan sikat logam (brushed steel)
+  ctx.save();
+  roundRect(wx, wy, ww, wh, 6); ctx.clip();
+  for (let i = 0; i < 96; i++) {
+    const yy = wy + pr(i) * wh;
+    ctx.strokeStyle = i % 2 ? 'rgba(255,255,255,.04)' : 'rgba(0,0,0,.06)';
+    ctx.lineWidth = 0.25 + pr(i + 40) * 0.6;
+    ctx.beginPath(); ctx.moveTo(wx, yy); ctx.lineTo(wx + ww, yy); ctx.stroke();
+  }
+  ctx.restore();
+
+  // alur bubut konsentris (profil mesin bubut)
+  roundRect(wx + 2.1, wy + 2.1, ww - 4.2, wh - 4.2, 4.5);
+  ctx.strokeStyle = 'rgba(0,0,0,.42)'; ctx.lineWidth = 0.55; ctx.stroke();
+  roundRect(wx + 3.1, wy + 3.1, ww - 6.2, wh - 6.2, 4);
+  ctx.strokeStyle = 'rgba(255,255,255,.12)'; ctx.lineWidth = 0.4; ctx.stroke();
+
+  // ===== bed mesin (permukaan main) =====
+  const fg = ctx.createLinearGradient(0, 0, 0, PH);
+  fg.addColorStop(0, '#2c6ea8'); fg.addColorStop(0.5, '#26629a'); fg.addColorStop(1, '#1f5286');
+  ctx.fillStyle = fg; ctx.fillRect(0, 0, PW, PH);
+  // grid meja kerja
+  ctx.strokeStyle = 'rgba(255,255,255,.05)'; ctx.lineWidth = 0.25;
+  ctx.beginPath();
+  for (let x = PW / 16; x < PW; x += PW / 16) { ctx.moveTo(x, 0); ctx.lineTo(x, PH); }
+  for (let y = PH / 8; y < PH; y += PH / 8) { ctx.moveTo(0, y); ctx.lineTo(PW, y); }
+  ctx.stroke();
+  // graduasi penggaris (skala mesin) di tepi atas & bawah
+  ctx.strokeStyle = 'rgba(255,255,255,.16)'; ctx.lineWidth = 0.3;
+  ctx.beginPath();
+  for (let i = 1; i < 64; i++) {
+    const x = i * PW / 64, lng = (i % 8 === 0) ? 2.4 : (i % 4 === 0) ? 1.6 : 0.9;
+    ctx.moveTo(x, 0.5); ctx.lineTo(x, 0.5 + lng);
+    ctx.moveTo(x, PH - 0.5); ctx.lineTo(x, PH - 0.5 - lng);
+  }
+  for (let i = 1; i < 32; i++) {
+    const y = i * PH / 32, lng = (i % 8 === 0) ? 2.4 : (i % 4 === 0) ? 1.6 : 0.9;
+    ctx.moveTo(0.5, y); ctx.lineTo(0.5 + lng, y);
+    ctx.moveTo(PW - 0.5, y); ctx.lineTo(PW - 0.5 - lng, y);
+  }
+  ctx.stroke();
+  // tulisan vertikal di bed (terukir)
+  ctx.save();
+  ctx.translate(PW / 2, PH / 2);
+  ctx.rotate(-Math.PI / 2);
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.font = 'bold 15px "Segoe UI",sans-serif';
+  const tw = ctx.measureText('ochim ganteng').width;
+  if (tw > PH - 16) ctx.font = 'bold ' + ((PH - 16) / tw * 15).toFixed(2) + 'px "Segoe UI",sans-serif';
+  ctx.fillStyle = 'rgba(0,0,0,.30)';
+  ctx.fillText('ochim ganteng', 0, 0.7);
+  ctx.fillStyle = 'rgba(255,255,255,.17)';
+  ctx.fillText('ochim ganteng', 0, 0);
+  ctx.restore();
+  // garis kepala + titik foot spot
+  ctx.strokeStyle = 'rgba(255,255,255,.10)'; ctx.lineWidth = 0.3;
+  ctx.beginPath(); ctx.moveTo(PW * 0.25, 0); ctx.lineTo(PW * 0.25, PH); ctx.stroke();
+  ctx.fillStyle = 'rgba(255,255,255,.30)';
+  ctx.beginPath(); ctx.arc(PW * 0.72, PH / 2, 0.9, 0, Math.PI * 2); ctx.fill();
+
+  // ===== karet tepi: logam karbon (6 potongan) =====
+  const C = 5.4, e = 2.4, g1 = 7.5, g2 = 7.5;
+  const cg = ctx.createLinearGradient(0, -C, 0, 0);
+  cg.addColorStop(0, '#39424a'); cg.addColorStop(1, '#646f78');
+  ctx.fillStyle = cg;
+  // atas
+  ctx.beginPath();
+  ctx.moveTo(g1, 0); ctx.lineTo(PW / 2 - g2, 0);
+  ctx.lineTo(PW / 2 - g2 + e, -C); ctx.lineTo(g1 - e, -C); ctx.closePath(); ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(PW / 2 + g2, 0); ctx.lineTo(PW - g1, 0);
+  ctx.lineTo(PW - g1 + e, -C); ctx.lineTo(PW / 2 + g2 - e, -C); ctx.closePath(); ctx.fill();
+  // bawah
+  ctx.beginPath();
+  ctx.moveTo(g1, PH); ctx.lineTo(PW / 2 - g2, PH);
+  ctx.lineTo(PW / 2 - g2 + e, PH + C); ctx.lineTo(g1 - e, PH + C); ctx.closePath(); ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(PW / 2 + g2, PH); ctx.lineTo(PW - g1, PH);
+  ctx.lineTo(PW - g1 + e, PH + C); ctx.lineTo(PW / 2 + g2 - e, PH + C); ctx.closePath(); ctx.fill();
+  // kiri
+  ctx.beginPath();
+  ctx.moveTo(0, g1); ctx.lineTo(0, PH - g1);
+  ctx.lineTo(-C, PH - g1 + e); ctx.lineTo(-C, g1 - e); ctx.closePath(); ctx.fill();
+  // kanan
+  ctx.beginPath();
+  ctx.moveTo(PW, g1); ctx.lineTo(PW, PH - g1);
+  ctx.lineTo(PW + C, PH - g1 + e); ctx.lineTo(PW + C, g1 - e); ctx.closePath(); ctx.fill();
+  // hidung karet (sisi mesin)
+  ctx.strokeStyle = 'rgba(190,225,255,.30)'; ctx.lineWidth = 0.35;
+  ctx.beginPath();
+  ctx.moveTo(g1, 0); ctx.lineTo(PW / 2 - g2, 0); ctx.moveTo(PW / 2 + g2, 0); ctx.lineTo(PW - g1, 0);
+  ctx.moveTo(g1, PH); ctx.lineTo(PW / 2 - g2, PH); ctx.moveTo(PW / 2 + g2, PH); ctx.lineTo(PW - g1, PH);
+  ctx.moveTo(0, g1); ctx.lineTo(0, PH - g1); ctx.moveTo(PW, g1); ctx.lineTo(PW, PH - g1);
+  ctx.stroke();
+  // garis sambungan karet ke bodi
+  ctx.strokeStyle = 'rgba(0,0,0,.45)'; ctx.lineWidth = 0.3;
+  ctx.beginPath();
+  ctx.moveTo(g1 - e, -C); ctx.lineTo(PW / 2 - g2 + e, -C); ctx.moveTo(PW / 2 + g2 - e, -C); ctx.lineTo(PW - g1 + e, -C);
+  ctx.moveTo(g1 - e, PH + C); ctx.lineTo(PW / 2 - g2 + e, PH + C); ctx.moveTo(PW / 2 + g2 - e, PH + C); ctx.lineTo(PW - g1 + e, PH + C);
+  ctx.moveTo(-C, g1 - e); ctx.lineTo(-C, PH - g1 + e); ctx.moveTo(PW + C, g1 - e); ctx.lineTo(PW + C, PH - g1 + e);
+  ctx.stroke();
+
+  // ===== lubang: cincin kromium =====
+  for (const pk of POCKETS) {
+    const rg = ctx.createRadialGradient(pk.x - pk.r * 0.4, pk.y - pk.r * 0.5, pk.r * 0.15, pk.x, pk.y, pk.r * 1.3);
+    rg.addColorStop(0, '#d3dce2'); rg.addColorStop(0.5, '#8b959c'); rg.addColorStop(1, '#394147');
+    ctx.fillStyle = rg;
+    ctx.beginPath(); ctx.arc(pk.x, pk.y, pk.r * 1.3, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = 'rgba(0,0,0,.55)'; ctx.lineWidth = 0.5; ctx.stroke();
+    const pg = ctx.createRadialGradient(pk.x, pk.y, 0.6, pk.x, pk.y, pk.r);
+    pg.addColorStop(0, '#000'); pg.addColorStop(0.7, '#040404'); pg.addColorStop(1, '#0f1417');
+    ctx.fillStyle = pg;
+    ctx.beginPath(); ctx.arc(pk.x, pk.y, pk.r * 1.02, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = 'rgba(0,0,0,.75)'; ctx.lineWidth = 0.6; ctx.stroke();
+    // tanda arah kikir pada cincin
+    ctx.strokeStyle = 'rgba(255,255,255,.22)'; ctx.lineWidth = 0.3;
+    ctx.beginPath(); ctx.arc(pk.x, pk.y, pk.r * 1.16, Math.PI * 1.15, Math.PI * 1.85); ctx.stroke();
+  }
+
+  // ===== baut heksagon (pengganti wajik) di rail =====
+  function hexBolt(x, y, r) {
+    ctx.beginPath();
+    for (let k = 0; k < 6; k++) {
+      const a = Math.PI / 6 + k * Math.PI / 3;
+      const px = x + Math.cos(a) * r, py = y + Math.sin(a) * r;
+      if (k) ctx.lineTo(px, py); else ctx.moveTo(px, py);
+    }
+    ctx.closePath();
+    const bg = ctx.createRadialGradient(x - r * 0.35, y - r * 0.45, r * 0.1, x, y, r);
+    bg.addColorStop(0, '#e2eaef'); bg.addColorStop(0.55, '#9aa4ab'); bg.addColorStop(1, '#4e575e');
+    ctx.fillStyle = bg; ctx.fill();
+    ctx.strokeStyle = '#171b1f'; ctx.lineWidth = 0.35; ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(x - r * 0.52, y); ctx.lineTo(x + r * 0.52, y);
+    ctx.strokeStyle = 'rgba(18,22,26,.9)'; ctx.lineWidth = r * 0.3; ctx.lineCap = 'round'; ctx.stroke();
+    ctx.lineCap = 'butt';
+  }
+  const by = -RAIL / 2 - 2.2, by2 = PH + RAIL / 2 + 2.2;
+  const bx = -RAIL / 2 - 2.2, bx2 = PW + RAIL / 2 + 2.2;
+  for (let i = 1; i <= 7; i++) {
+    if (i === 4) continue;
+    hexBolt(i * PW / 8, by, 1.35);
+    hexBolt(i * PW / 8, by2, 1.35);
+  }
+  for (let i = 1; i <= 3; i++) {
+    hexBolt(bx, i * PH / 4, 1.35);
+    hexBolt(bx2, i * PH / 4, 1.35);
+  }
+  // rivet kecil di tepi luar bodi
+  function rivet(x, y) {
+    ctx.beginPath(); ctx.arc(x, y, 0.75, 0, Math.PI * 2);
+    const rg2 = ctx.createRadialGradient(x - 0.2, y - 0.25, 0.05, x, y, 0.8);
+    rg2.addColorStop(0, '#cfd7dd'); rg2.addColorStop(1, '#4a535a');
+    ctx.fillStyle = rg2; ctx.fill();
+    ctx.strokeStyle = 'rgba(0,0,0,.55)'; ctx.lineWidth = 0.25; ctx.stroke();
+  }
+  for (let x = wx + 14; x <= wx + ww - 14; x += 17) { rivet(x, wy + 2.4); rivet(x, wy + wh - 2.4); }
+  for (let y = wy + 14; y <= wy + wh - 14; y += 17) { rivet(wx + 2.4, y); rivet(wx + ww - 2.4, y); }
+}
+function drawBall(b) {
+  const x = b.x, y = b.y;
+  // bayangan
+  ctx.fillStyle = 'rgba(0,0,0,.32)';
+  ctx.beginPath(); ctx.ellipse(x + 0.7, y + 1.0, R * 1.02, R * 0.86, 0, 0, Math.PI * 2); ctx.fill();
+  // badan
+  ctx.save();
+  ctx.beginPath(); ctx.arc(x, y, R, 0, Math.PI * 2); ctx.clip();
+  if (b.num === 0) {
+    ctx.fillStyle = '#f6f4ef';
+    ctx.fillRect(x - R, y - R, 2 * R, 2 * R);
+  } else {
+    if (b.num > 8) {
+      ctx.fillStyle = '#f6f4ef';
+      ctx.fillRect(x - R, y - R, 2 * R, 2 * R);
+      ctx.fillStyle = COL[b.num];
+      ctx.fillRect(x - R, y - R * 0.52, 2 * R, R * 1.04);
+    } else {
+      ctx.fillStyle = COL[b.num];
+      ctx.fillRect(x - R, y - R, 2 * R, 2 * R);
+    }
+  }
+  // nomor
+  if (b.num > 0) {
+    ctx.fillStyle = '#f8f8f4';
+    ctx.beginPath(); ctx.arc(x, y, R * 0.52, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#151515';
+    ctx.font = 'bold ' + (R * 0.78) + 'px Arial';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(String(b.num), x, y + R * 0.05);
+  }
+  // kilau
+  const hg = ctx.createRadialGradient(x - R * 0.36, y - R * 0.42, 0.1, x - R * 0.36, y - R * 0.42, R * 0.95);
+  hg.addColorStop(0, 'rgba(255,255,255,.75)');
+  hg.addColorStop(0.35, 'rgba(255,255,255,.13)');
+  hg.addColorStop(1, 'rgba(255,255,255,0)');
+  ctx.fillStyle = hg;
+  ctx.fillRect(x - R, y - R, 2 * R, 2 * R);
+  ctx.restore();
+  ctx.strokeStyle = 'rgba(0,0,0,.35)'; ctx.lineWidth = 0.18;
+  ctx.beginPath(); ctx.arc(x, y, R, 0, Math.PI * 2); ctx.stroke();
+}
+function drawBalls() {
+  for (const b of balls) {
+    if (b.potted) continue;
+    if (phase === 'hand' && b.num === 0) continue;
+    drawBall(b);
+  }
+}
+// ===== panduan panjang: garis lintasan sampai ke lubang (cheat) =====
+let gCache = { key: null };
+function getGuide(cue) {
+  let key;
+  try {
+    key = turn + '#' + (cheatOn ? 1 : 0) + '#' + (breakShot ? 1 : 0) + '#' + players[0].group + '#';
+    for (let i = 0; i < balls.length; i++) {
+      const b = balls[i];
+      key += b.num + ':' + b.x.toFixed(2) + ',' + b.y.toFixed(2) + ',' + (b.potted ? 1 : 0) + ';';
+    }
+  } catch (e) { return null; }
+  if (gCache.key === key) return gCache;
+  const res = { key: key, ang: aimAng, pw: power, cuePath: null, tgtPath: null, pocket: null, guided: false };
+  try {
+    const targets = legalTargets(0);
+    const group = players[0].group;
+    let cs = null;
+    if (cheatOn && turn === 0 && targets.length) cs = cheatAim(cue);
+    const ang = cs ? cs.ang : aimAng;
+    const pw = cs ? cs.power : clamp(power > 0.05 ? power : 0.55, 0.15, 1);
+    res.ang = ang; res.pw = pw; res.guided = !!cs;
+    const rec = {};
+    shadowPots(cue, ang, pw, targets, group, rec);
+    res.cuePath = rec[0] && rec[0].length > 1 ? rec[0] : null;
+    let tp = null;
+    const pot = rec.potted || [];
+    for (let i = 0; i < pot.length; i++) {
+      const b = pot[i];
+      if (b.num > 0 && targets.indexOf(b) >= 0 && rec[b.num] && rec[b.num].length > 1) { tp = rec[b.num]; break; }
+    }
+    if (!tp) {
+      for (let i = 0; i < targets.length; i++) {
+        const n = targets[i].num;
+        if (rec[n] && rec[n].length > 1) { tp = rec[n]; break; }
+      }
+    }
+    res.tgtPath = tp;
+    if (tp && tp.length) {
+      const last = tp[tp.length - 1];
+      let bd = 1e9, bp = null;
+      for (let i = 0; i < POCKETS.length; i++) {
+        const pk = POCKETS[i];
+        const d = Math.hypot(pk.x - last.x, pk.y - last.y);
+        if (d < bd) { bd = d; bp = pk; }
+      }
+      if (bp && bd < 14) res.pocket = bp;
+    }
+    if (!res.pocket) {
+      // fallback: lubang yang paling sejajar dengan arah tembak
+      const dx = Math.cos(res.ang), dy = Math.sin(res.ang);
+      let best = -1, bv = 0;
+      for (let i = 0; i < POCKETS.length; i++) {
+        const pk = POCKETS[i];
+        const ox = pk.x - cue.x, oy = pk.y - cue.y;
+        const ol = Math.hypot(ox, oy) || 1;
+        const v = (ox * dx + oy * dy) / ol;
+        if (v > bv) { bv = v; best = i; }
+      }
+      if (bv > 0.75) res.pocket = POCKETS[best];
+    }
+  } catch (e) { }
+  gCache = res;
+  return res;
+}
+function drawGuide() {
+  if (!cheatOn || turn !== 0 || phase !== 'aim') return;
+  const cue = balls[0];
+  if (cue.potted) return;
+  const g = getGuide(cue);
+  if (!g) return;
+  ctx.save();
+  ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+  // jalur bola putih (putus-putus biru muda)
+  if (g.cuePath && g.cuePath.length > 1) {
+    ctx.setLineDash([2.6, 2.2]);
+    ctx.lineWidth = 0.45;
+    ctx.strokeStyle = 'rgba(150,240,255,.6)';
+    ctx.beginPath();
+    ctx.moveTo(g.cuePath[0].x, g.cuePath[0].y);
+    for (let i = 1; i < g.cuePath.length; i++) ctx.lineTo(g.cuePath[i].x, g.cuePath[i].y);
+    ctx.stroke();
+    ctx.setLineDash([]);
+  }
+  // garis panjang lintasan bola target sampai ke lubang
+  if (g.tgtPath && g.tgtPath.length > 1) {
+    ctx.shadowColor = 'rgba(255,205,60,.95)'; ctx.shadowBlur = 4;
+    ctx.lineWidth = 0.65;
+    ctx.strokeStyle = 'rgba(255,230,120,.98)';
+    ctx.beginPath();
+    ctx.moveTo(g.tgtPath[0].x, g.tgtPath[0].y);
+    for (let i = 1; i < g.tgtPath.length; i++) ctx.lineTo(g.tgtPath[i].x, g.tgtPath[i].y);
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+    const n = g.tgtPath.length, a = g.tgtPath[n - 2], b = g.tgtPath[n - 1];
+    const th = Math.atan2(b.y - a.y, b.x - a.x);
+    ctx.fillStyle = 'rgba(255,230,120,.98)';
+    ctx.beginPath();
+    ctx.moveTo(b.x + Math.cos(th) * 2.8, b.y + Math.sin(th) * 2.8);
+    ctx.lineTo(b.x + Math.cos(th + 2.5) * 1.9, b.y + Math.sin(th + 2.5) * 1.9);
+    ctx.lineTo(b.x + Math.cos(th - 2.5) * 1.9, b.y + Math.sin(th - 2.5) * 1.9);
+    ctx.closePath(); ctx.fill();
+  } else if (g.pocket) {
+    // jalur lurus menuju lubang bila tidak ada rekaman lintasan
+    ctx.setLineDash([3.4, 2.6]);
+    ctx.lineWidth = 0.55;
+    ctx.strokeStyle = 'rgba(255,230,120,.9)';
+    ctx.beginPath();
+    ctx.moveTo(cue.x, cue.y);
+    ctx.lineTo(g.pocket.x, g.pocket.y);
+    ctx.stroke();
+    ctx.setLineDash([]);
+  }
+  // lingkaran berdenyut pada lubang tujuan
+  if (g.pocket) {
+    const t = (typeof performance !== 'undefined' ? performance.now() : Date.now()) / 1000;
+    const rr = g.pocket.r * (1.45 + 0.4 * Math.sin(t * 5));
+    ctx.strokeStyle = 'rgba(90,255,170,.95)'; ctx.lineWidth = 0.7;
+    ctx.beginPath(); ctx.arc(g.pocket.x, g.pocket.y, rr, 0, Math.PI * 2); ctx.stroke();
+    ctx.strokeStyle = 'rgba(90,255,170,.5)'; ctx.lineWidth = 0.4;
+    const cr = g.pocket.r * 2.2;
+    ctx.beginPath();
+    ctx.moveTo(g.pocket.x - cr, g.pocket.y); ctx.lineTo(g.pocket.x - cr * 0.5, g.pocket.y);
+    ctx.moveTo(g.pocket.x + cr * 0.5, g.pocket.y); ctx.lineTo(g.pocket.x + cr, g.pocket.y);
+    ctx.moveTo(g.pocket.x, g.pocket.y - cr); ctx.lineTo(g.pocket.x, g.pocket.y - cr * 0.5);
+    ctx.moveTo(g.pocket.x, g.pocket.y + cr * 0.5); ctx.lineTo(g.pocket.x, g.pocket.y + cr);
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+function drawAim() {
+  if (phase !== 'aim') return;
+  const cue = balls[0];
+  if (cue.potted) return;
+  const dx = Math.cos(aimAng), dy = Math.sin(aimAng);
+  let bestT = 1e9, hit = null;
+  for (const b of balls) {
+    if (b.potted || b.num === 0) continue;
+    const ox = cue.x - b.x, oy = cue.y - b.y;
+    const bq = 2 * (ox * dx + oy * dy);
+    const c = ox * ox + oy * oy - 4 * R * R;
+    const disc = bq * bq - 4 * c;
+    if (disc < 0) continue;
+    const t = (-bq - Math.sqrt(disc)) / 2;
+    if (t > 0.01 && t < bestT) { bestT = t; hit = b; }
+  }
+  let tw = 1e9;
+  if (dx > 1e-6) tw = Math.min(tw, (PW - R - cue.x) / dx);
+  else if (dx < -1e-6) tw = Math.min(tw, (R - cue.x) / dx);
+  if (dy > 1e-6) tw = Math.min(tw, (PH - R - cue.y) / dy);
+  else if (dy < -1e-6) tw = Math.min(tw, (R - cue.y) / dy);
+
+  ctx.save();
+  ctx.setLineDash([2.2, 1.8]);
+  ctx.lineWidth = 0.45;
+  if (hit && bestT < tw) {
+    const gx = cue.x + dx * bestT, gy = cue.y + dy * bestT;
+    ctx.strokeStyle = 'rgba(255,255,255,.85)';
+    ctx.beginPath(); ctx.moveTo(cue.x + dx * R, cue.y + dy * R); ctx.lineTo(gx, gy); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.strokeStyle = 'rgba(255,255,255,.6)';
+    ctx.lineWidth = 0.3;
+    ctx.beginPath(); ctx.arc(gx, gy, R, 0, Math.PI * 2); ctx.stroke();
+    const ux = (hit.x - gx), uy = (hit.y - gy);
+    const ul = Math.hypot(ux, uy) || 1;
+    ctx.strokeStyle = 'rgba(255,235,140,.95)';
+    ctx.lineWidth = 0.5;
+    ctx.beginPath();
+    ctx.moveTo(hit.x, hit.y);
+    ctx.lineTo(hit.x + ux / ul * 26, hit.y + uy / ul * 26);
+    ctx.stroke();
+    const proj = dx * (ux / ul) + dy * (uy / ul);
+    let tx = dx - proj * (ux / ul), ty = dy - proj * (uy / ul);
+    const tl = Math.hypot(tx, ty);
+    if (tl > 0.05) {
+      tx /= tl; ty /= tl;
+      ctx.strokeStyle = 'rgba(255,255,255,.45)';
+      ctx.lineWidth = 0.4;
+      ctx.beginPath();
+      ctx.moveTo(gx, gy);
+      ctx.lineTo(gx + tx * 18, gy + ty * 18);
+      ctx.stroke();
+    }
+  } else if (tw < 1e8) {
+    const wx = cue.x + dx * tw, wy = cue.y + dy * tw;
+    ctx.strokeStyle = 'rgba(255,255,255,.8)';
+    ctx.beginPath(); ctx.moveTo(cue.x + dx * R, cue.y + dy * R); ctx.lineTo(wx, wy); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = 'rgba(255,255,255,.75)';
+    ctx.beginPath(); ctx.arc(wx, wy, 0.9, 0, Math.PI * 2); ctx.fill();
+  }
+  ctx.restore();
+}
+function drawCueStick() {
+  if (phase !== 'aim') return;
+  const cue = balls[0];
+  if (cue.potted) return;
+  const dx = Math.cos(aimAng), dy = Math.sin(aimAng);
+  const px = -dy, py = dx;
+  const tipD = R + 2.2 + power * 17;
+  const tx = cue.x - dx * tipD, ty = cue.y - dy * tipD;
+  const len = 78, split = 40;
+  const bx = tx - dx * len, by = ty - dy * len;
+  const jx = tx - dx * split, jy = ty - dy * split;
+  const cx = tx - dx * split * 0.5, cy = ty - dy * split * 0.5;
+  const P = function (s, w) { return [tx - dx * s + px * w, ty - dy * s + py * w]; };
+  const seg = function (s0, w0, s1, w1) {
+    const a = P(s0, w0), b = P(s1, w1), c = P(s1, -w1), d = P(s0, -w0);
+    ctx.beginPath();
+    ctx.moveTo(a[0], a[1]); ctx.lineTo(b[0], b[1]); ctx.lineTo(c[0], c[1]); ctx.lineTo(d[0], d[1]);
+    ctx.closePath();
+  };
+  const shine = function (s0, s1, w) {
+    const a = P(s0, w), b = P(s1, w);
+    ctx.beginPath(); ctx.moveTo(a[0], a[1]); ctx.lineTo(b[0], b[1]);
+    ctx.strokeStyle = 'rgba(255,255,255,.32)'; ctx.lineWidth = 0.5; ctx.stroke();
+  };
+  const metalGrad = function (s, w) {
+    const a = P(s, w), b = P(s, -w);
+    const g = ctx.createLinearGradient(a[0], a[1], b[0], b[1]);
+    g.addColorStop(0, '#6f7d8c'); g.addColorStop(0.42, '#dfe7ef');
+    g.addColorStop(0.6, '#aab6c4'); g.addColorStop(1, '#5c6875');
+    return g;
+  };
+  ctx.save();
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  if (cueStyle === 'lidi') {
+    // gagang: lidi terikat rapat
+    const gB = 2.6, gM = 1.7, k = 5;
+    for (let i = 0; i < k; i++) {
+      const t = (i - (k - 1) / 2) / ((k - 1) / 2);
+      ctx.beginPath();
+      ctx.moveTo(bx + px * (t * gB), by + py * (t * gB));
+      ctx.lineTo(jx + px * (t * gM), jy + py * (t * gM));
+      ctx.strokeStyle = i % 2 ? '#c9954c' : '#e3bd7d';
+      ctx.lineWidth = 1.1;
+      ctx.stroke();
+    }
+    // tali pengikat
+    for (const tt of [0.22, 0.5]) {
+      const ix = bx + (jx - bx) * tt, iy = by + (jy - by) * tt;
+      const w = gB + (gM - gB) * tt + 0.5;
+      ctx.strokeStyle = '#3a2410';
+      ctx.lineWidth = 1.4;
+      ctx.beginPath();
+      ctx.moveTo(ix + px * w, iy + py * w);
+      ctx.lineTo(ix - px * w, iy - py * w);
+      ctx.stroke();
+    }
+    // rambut lidi (ujung sapu, sedikit mekar)
+    const n = 7, spread = 1.7;
+    for (let i = 0; i < n; i++) {
+      const t = (i - (n - 1) / 2) / ((n - 1) / 2);
+      const jit = Math.abs(Math.sin(i * 7.13)) * 1.7;
+      ctx.beginPath();
+      ctx.moveTo(jx + px * (t * gM * 0.9), jy + py * (t * gM * 0.9));
+      ctx.quadraticCurveTo(
+        cx + px * (t * (gM + spread) * 0.7), cy + py * (t * (gM + spread) * 0.7),
+        tx - dx * jit + px * (t * spread), ty - dy * jit + py * (t * spread)
+      );
+      ctx.strokeStyle = i % 2 ? '#e8d6a8' : '#d3b678';
+      ctx.lineWidth = 0.5;
+      ctx.stroke();
+    }
+  } else if (cueStyle === 'cangkul') {
+    // gagang cangkul: kayu bulat + mata cangkul di ujung
+    seg(4, 1.5, len, 2.15);
+    ctx.fillStyle = '#a4702f'; ctx.fill();
+    ctx.strokeStyle = 'rgba(40,22,6,.75)'; ctx.lineWidth = 0.35; ctx.stroke();
+    shine(9, len - 4, 0.75);
+    // serat kayu
+    for (const o of [-0.7, 0.5]) {
+      const a = P(8, o), b = P(len - 6, o * 1.5);
+      ctx.beginPath(); ctx.moveTo(a[0], a[1]); ctx.lineTo(b[0], b[1]);
+      ctx.strokeStyle = 'rgba(70,40,12,.5)'; ctx.lineWidth = 0.3; ctx.stroke();
+    }
+    // sok besi
+    seg(1.6, 1.75, 5, 1.62);
+    ctx.fillStyle = metalGrad(3.3, 1.75); ctx.fill();
+    ctx.strokeStyle = 'rgba(20,26,34,.8)'; ctx.lineWidth = 0.3; ctx.stroke();
+    // mata cangkul (pelat melintang)
+    const a1 = P(0, 5.6), a2 = P(3.6, 5.1), a3 = P(3.6, -5.1), a4 = P(0, -5.6);
+    ctx.beginPath();
+    ctx.moveTo(a1[0], a1[1]); ctx.lineTo(a2[0], a2[1]); ctx.lineTo(a3[0], a3[1]); ctx.lineTo(a4[0], a4[1]);
+    ctx.closePath();
+    ctx.fillStyle = metalGrad(1.8, 5.6); ctx.fill();
+    ctx.strokeStyle = 'rgba(18,24,32,.9)'; ctx.lineWidth = 0.4; ctx.stroke();
+    // mata pisau
+    const e1 = P(0.5, 5.3), e2 = P(0.5, -5.3);
+    ctx.beginPath(); ctx.moveTo(e1[0], e1[1]); ctx.lineTo(e2[0], e2[1]);
+    ctx.strokeStyle = '#f3f8ff'; ctx.lineWidth = 0.7; ctx.stroke();
+  } else if (cueStyle === 'sekop') {
+    // gagang sekop: bilah runcing di ujung + pegangan D di belakang
+    const bl = [[14, 1.55], [10, 4.3], [3.2, 4.5], [0.6, 2.4]];
+    const tipP = P(0, 0);
+    ctx.beginPath();
+    let p = P(bl[0][0], bl[0][1]); ctx.moveTo(p[0], p[1]);
+    p = P(bl[1][0], bl[1][1]); ctx.lineTo(p[0], p[1]);
+    p = P(bl[2][0], bl[2][1]); ctx.lineTo(p[0], p[1]);
+    p = P(bl[3][0], bl[3][1]); ctx.quadraticCurveTo(p[0], p[1], tipP[0], tipP[1]);
+    p = P(bl[3][0], -bl[3][1]); ctx.quadraticCurveTo(p[0], p[1], P(bl[2][0], -bl[2][1])[0], P(bl[2][0], -bl[2][1])[1]);
+    p = P(bl[1][0], -bl[1][1]); ctx.lineTo(p[0], p[1]);
+    p = P(bl[0][0], -bl[0][1]); ctx.lineTo(p[0], p[1]);
+    ctx.closePath();
+    ctx.fillStyle = metalGrad(7, 4.5); ctx.fill();
+    ctx.strokeStyle = 'rgba(18,24,32,.9)'; ctx.lineWidth = 0.4; ctx.stroke();
+    // tulang bilah
+    const r1 = P(1.5, 0), r2 = P(13, 0);
+    ctx.beginPath(); ctx.moveTo(r1[0], r1[1]); ctx.lineTo(r2[0], r2[1]);
+    ctx.strokeStyle = 'rgba(255,255,255,.45)'; ctx.lineWidth = 0.6; ctx.stroke();
+    // sok
+    seg(13.5, 1.7, 17, 1.62);
+    ctx.fillStyle = metalGrad(15, 1.7); ctx.fill();
+    ctx.strokeStyle = 'rgba(20,26,34,.8)'; ctx.lineWidth = 0.3; ctx.stroke();
+    // gagang kayu
+    seg(16.5, 1.5, 70, 1.95);
+    ctx.fillStyle = '#b9813a'; ctx.fill();
+    ctx.strokeStyle = 'rgba(45,26,8,.75)'; ctx.lineWidth = 0.35; ctx.stroke();
+    shine(22, 66, 0.7);
+    // pegangan D
+    const d1 = P(70, 2.1), d2 = P(77.5, 3.6), d3 = P(77.5, -3.6), d4 = P(70, -2.1);
+    ctx.beginPath();
+    ctx.moveTo(d1[0], d1[1]); ctx.lineTo(d2[0], d2[1]); ctx.lineTo(d3[0], d3[1]); ctx.lineTo(d4[0], d4[1]);
+    ctx.strokeStyle = '#e94560'; ctx.lineWidth = 1.6; ctx.stroke();
+    ctx.beginPath();
+    const g1 = P(77.5, 3.6), g2 = P(77.5, -3.6);
+    ctx.moveTo(g1[0], g1[1]); ctx.lineTo(g2[0], g2[1]);
+    ctx.strokeStyle = '#b8324a'; ctx.lineWidth = 2.6; ctx.stroke();
+  } else {
+    // stik biliar standar
+    seg(0, 0.72, 1.3, 0.78); ctx.fillStyle = '#3aa0ff'; ctx.fill();
+    seg(1.3, 0.78, 4.2, 0.92); ctx.fillStyle = '#f4f7fb'; ctx.fill();
+    seg(4.2, 0.92, 46, 1.75);
+    ctx.fillStyle = '#dcae6e'; ctx.fill();
+    ctx.strokeStyle = 'rgba(70,42,14,.7)'; ctx.lineWidth = 0.3; ctx.stroke();
+    shine(7, 43, 0.7);
+    // lilitan gagang
+    seg(46, 1.75, 74, 2.5); ctx.fillStyle = '#16273c'; ctx.fill();
+    ctx.strokeStyle = 'rgba(0,0,0,.6)'; ctx.lineWidth = 0.3; ctx.stroke();
+    for (const s of [50, 57, 64, 71]) {
+      const a = P(s, 2.4), b = P(s - 2, 2.4);
+      ctx.beginPath(); ctx.moveTo(a[0], a[1]); ctx.lineTo(b[0], b[1]);
+      ctx.strokeStyle = 'rgba(255,255,255,.14)'; ctx.lineWidth = 0.6; ctx.stroke();
+    }
+    seg(45, 1.78, 47, 1.85); ctx.fillStyle = '#e94560'; ctx.fill();
+    seg(74, 2.5, 78, 2.35); ctx.fillStyle = '#0b1622'; ctx.fill();
+  }
+  ctx.restore();
+}
+function drawHandGhost() {
+  if (phase !== 'hand') return;
+  const pt = ghostPt || (lastPt.has ? lastPt : { x: PW * 0.25, y: PH / 2 });
+  const ok = validPlace(pt.x, pt.y);
+  ctx.save();
+  ctx.globalAlpha = 0.75;
+  drawBall({ num: 0, x: pt.x, y: pt.y });
+  ctx.restore();
+  ctx.strokeStyle = ok ? 'rgba(80,255,140,.95)' : 'rgba(255,80,80,.95)';
+  ctx.lineWidth = 0.45;
+  ctx.setLineDash([1.6, 1.4]);
+  ctx.beginPath(); ctx.arc(pt.x, pt.y, R + 1.6, 0, Math.PI * 2); ctx.stroke();
+  ctx.setLineDash([]);
+}
+function render() {
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.fillStyle = '#0d1b2a';
+  ctx.fillRect(0, 0, cw, ch);
+  ctx.save();
+  ctx.translate(ox, oy);
+  ctx.scale(scale, scale);
+  ctx.lineJoin = 'round';
+  drawTable();
+  drawBalls();
+  drawAim();
+  drawGuide();
+  drawCueStick();
+  drawHandGhost();
+  ctx.restore();
+  sndCount = 0;
+}
+
+// ============ LOOP ============
+let lastT = 0;
+function loop(t) {
+  const dt = Math.min(0.05, (t - lastT) / 1000 || 0);
+  lastT = t;
+  update(dt);
+  render();
+  requestAnimationFrame(loop);
+}
+
+// ============ MODAL ============
+function openHelp() {
+  const existing = document.querySelector('.modal');
+  if (existing) existing.remove();
+  const m = document.createElement('div');
+  m.className = 'modal';
+  m.innerHTML = '<div class="modalBox">' +
+    '<h2>CARA BERMAIN BILYAR</h2>' +
+    '<p><span class="k">1. Bidik &amp; Pukul</span><br><b>Di HP:</b> seret jari di meja untuk mengubah arah, geser tombol <span class="w">TENAGA</span>, lalu tekan tombol bulat <span class="w">TEMBAK</span>. <b>Di desktop:</b> arahkan kursor untuk bidik, klik-tahan lalu tarik (slingshot) — makin jauh makin kuat — lepas untuk memukul.</p>' +
+    '<p><span class="k">2. Keyboard (opsional)</span><br>← → haluskan bidikan, ↑ ↓ atur tenaga, Spasi pukul.</p>' +
+    '<p><span class="k">3. Kelompok Bola</span><br>Tabel terbuka sampai bola pertama masuk. <span class="w">Solid = 1-7</span>, <span class="w">Strip = 9-15</span>. Masukkan semua bola kelompokmu, lalu masukkan <span class="w">bola 8</span> terakhir untuk menang.</p>' +
+    '<p><span class="k">4. Foul</span><br>Bola putih masuk lubang, tidak menyentuh bola apa pun, memukul bola lawan/8 lebih dulu, atau tidak ada bola yang menyentuh tepi. Akibatnya lawan mendapat <span class="k">bola di tangan</span> (klik meja untuk menaruh bola putih di posisi bebas).</p>' +
+    '<p><span class="k">5. Menang &amp; Kalah</span><br>Memasukkan bola 8 sebelum kelompokmu habis = <b style="color:#ff6b6b">KALAH</b>. Memasukkan bola 8 setelah kelompok habis tanpa foul = <b style="color:#4cff9d">MENANG</b>.</p>' +
+    '<p><span class="k">6. Lawan</span><br>Sebelum mulai kamu memilih lawan komputer: <span class="w">Edo</span> (sulit), <span class="w">Galih</span> (sedang), <span class="w">Ochim</span> (mudah), dan <span class="w">Rafliiii</span> (pemain top markotop, tak terkalahkan). Tekan tombol <b>Ganti Lawan</b> kapan saja untuk menggantinya.</p>' +
+    '<p><span class="k">7. Mode Permainan</span><br>Di layar pilih lawan ada tombol <span class="w">BOLA 8</span> dan <span class="w">BOLA 9</span>. Ganti mode kapan saja lewat tombol <b>Ganti Lawan</b>.</p>' +
+    '<p><span class="k">8. Mode Bola 9</span><br>Hanya bola <span class="w">1-9</span> dipakai (bola 9 di tengah rak, wajik). Wajib memukul <span class="w">bola bernomor paling rendah</span> lebih dulu — melanggar = foul. Masukkan <span class="w">bola 9</span> secara sah kapan saja untuk MENANG; kalau foul saat bola 9 masuk, bola 9 dikembalikan ke tempatnya. Memasukkan bola apa pun tanpa foul membuatmu tetap melanjutkan giliran (tidak ada kelompok solid/strip).</p>' +
+    '<p><span class="k">9. Pilih Gagang</span><br>Di samping meja ada panel <b>PILIH GAGANG</b> bergambar: <span class="w">Stik</span> bilyar, <span class="w">Sapu Lidi</span>, <span class="w">Cangkul</span>, dan <span class="w">Sekop</span> — klik salah satu untuk memakainya. Di layar sempit, pakai tombol <b>Gagang</b> di pojok kanan atas. Pilihan tersimpan untuk pertandingan berikutnya.</p>' +
+    '<button class="btn closeModal" onclick="this.closest(\'.modal\').remove()">Mengerti!</button>' +
+    '</div>';
+  document.body.appendChild(m);
+}
+
+// ============ INIT ============
+loadOpt();
+try { if (localStorage.getItem('bilyar8rot') === '1') document.body.classList.add('rotOff'); } catch (e) {}
+resize();
+window.addEventListener('resize', resize);
+window.addEventListener('orientationchange', function () { setTimeout(resize, 300); });
+if (window.visualViewport) window.visualViewport.addEventListener('resize', resize);
+document.getElementById('btnOpp').addEventListener('click', function () { showPicker(); });
+document.getElementById('btnOppM').addEventListener('click', function () { showPicker(); toggleMenu(); });
+document.getElementById('btnCheat').addEventListener('click', function () { openCheat(); });
+document.getElementById('btnCheatM').addEventListener('click', function () { toggleMenu(); openCheat(); });
+document.getElementById('btnPickClose').addEventListener('click', function () { if (started) { hidePicker(); scheduleAI(); } });
+document.getElementById('btnSnd').addEventListener('click', toggleSound);
+document.getElementById('btnSndM').addEventListener('click', toggleSound);
+document.getElementById('btnGagang').addEventListener('click', nextCue);
+document.getElementById('btnGagangM').addEventListener('click', function () { toggleMenu(); nextCue(); });
+document.getElementById('btnOppQ').addEventListener('click', function () { showPicker(); });
+document.getElementById('btnGagangQ').addEventListener('click', function () { nextCue(); });
+document.getElementById('btnSndQ').addEventListener('click', toggleSound);
+document.getElementById('btnMenuClose').addEventListener('click', function (e) { e.stopPropagation(); toggleMenu(); });
+document.getElementById('rotClose').addEventListener('click', function (e) { e.stopPropagation(); closeRot(); });
+document.getElementById('btnExit').addEventListener('click', function () { if (document.getElementById('menuPanel').classList.contains('show')) toggleMenu(); askExit(); });
+document.getElementById('btnExitM').addEventListener('click', function () { toggleMenu(); askExit(); });
+document.getElementById('qAgain').addEventListener('click', quitAgain);
+document.getElementById('qPicker').addEventListener('click', quitToPicker);
+document.getElementById('qClose').addEventListener('click', quitCloseTab);
+document.querySelectorAll('#cuePanel .cueOpt').forEach(function (b) {
+  b.addEventListener('click', function () {
+    setCueStyle(b.getAttribute('data-cue'));
+    showMsg('Gagang dipakai: ' + cueLabel(cueStyle), 1.6);
+  });
+});
+refreshCueBtn();
+powerSlider.addEventListener('input', function () { power = clamp(Number(this.value) / 100, 0, 1); });
+powerSlider.addEventListener('change', function () { power = clamp(Number(this.value) / 100, 0, 1); });
+fireBtn.addEventListener('click', function () {
+  initAudio();
+  if (pickOpen || modalOpen) return;
+  if (phase !== 'aim' || turn === 1) { showMsg('Belum giliranmu', 1.2); return; }
+  if (power < 0.03) { showMsg('Atur TENAGA dulu', 1.4); return; }
+  shoot();
+});
+setTouchMode(window.matchMedia ? matchMedia('(pointer: coarse)').matches : (navigator.maxTouchPoints || 0) > 0);
+(function () {
+  const t = muted ? '🔇 Suara' : '🔊 Suara';
+  document.getElementById('btnSnd').textContent = t;
+  document.getElementById('btnSndM').textContent = t;
+  const q = document.getElementById('btnSndQ');
+  if (q) { q.textContent = muted ? '🔇' : '🔊'; q.title = muted ? 'Suara mati' : 'Suara hidup'; }
+})();
+buildPicker();
+newGame();
+showPicker();
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>
+
+
+
