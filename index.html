@@ -89,20 +89,18 @@ canvas{width:100%;height:100%;display:block;touch-action:none;user-select:none;-
 #msg{position:absolute;top:44%;left:50%;transform:translate(-50%,-50%);font-size:min(1.5em,4.4vw);font-weight:bold;text-shadow:0 2px 18px rgba(0,0,0,.9);text-align:center;pointer-events:none;z-index:4;opacity:0;transition:opacity .3s;padding:0 10px;white-space:pre-line}
 #hint{position:absolute;bottom:10px;left:50%;transform:translateX(-50%);font-size:min(.72em,3vw);color:#dbe8fb;text-align:center;z-index:5;background:rgba(5,17,34,.58);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);padding:5px 14px;border-radius:20px;border:1px solid rgba(255,255,255,.16);max-width:92%;pointer-events:none}
 /* ===== kontrol sentuh (HP) ===== */
-#touchBar{position:absolute;left:0;right:0;bottom:calc(10px + env(safe-area-inset-bottom,0px));display:none;align-items:center;justify-content:space-between;gap:10px;padding:0 calc(12px + env(safe-area-inset-right,0px)) 0 calc(12px + env(safe-area-inset-left,0px));z-index:6;pointer-events:none}
+#touchBar{position:absolute;left:0;right:0;bottom:calc(6px + env(safe-area-inset-bottom,0px));display:none;align-items:center;justify-content:space-between;gap:8px;padding:0 calc(10px + env(safe-area-inset-right,0px)) 0 calc(10px + env(safe-area-inset-left,0px));z-index:6;pointer-events:none}
 body.touchOn #touchBar{display:flex}
-/* petunjuk dipindah ke celah di tengah bar, biar tidak menutupi meja/lubang */
-/* petunjuk dipindah ke celah antara slider dan tombol TEMBAK (kanan bar),
-   lebar dibatasi ruang celah supaya tidak pernah menutupi meja maupun kontrol */
-body.touchOn #hint{left:auto;right:calc(124px + env(safe-area-inset-right,0px));transform:none;bottom:calc(44px + env(safe-area-inset-bottom,0px));max-width:calc(44% - 136px);font-size:min(.62em,2.4vw);padding:5px 8px;line-height:1.35;border-radius:12px;text-align:center}
-body.touchOn #powerWrap{bottom:calc(116px + env(safe-area-inset-bottom,0px))}
-#powerCtl{flex:1;max-width:56%;min-width:0;display:flex;align-items:center;gap:7px;background:rgba(5,17,34,.6);backdrop-filter:blur(7px);-webkit-backdrop-filter:blur(7px);border:1px solid rgba(255,255,255,.22);border-radius:26px;padding:8px 12px;pointer-events:auto;box-shadow:0 4px 14px rgba(0,0,0,.5)}
+/* petunjuk dipindah ke atas (di bawah topbar) supaya tidak menutupi/melewati meja */
+body.touchOn #hint{left:50%;right:auto;transform:translateX(-50%);bottom:auto;top:calc(56px + env(safe-area-inset-top,0px));max-width:92%;font-size:min(.6em,2.2vw);padding:4px 10px;line-height:1.3;border-radius:12px;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+body.touchOn #powerWrap{bottom:calc(76px + env(safe-area-inset-bottom,0px))}
+#powerCtl{flex:1;max-width:40%;min-width:0;display:flex;align-items:center;gap:6px;background:rgba(5,17,34,.6);backdrop-filter:blur(7px);-webkit-backdrop-filter:blur(7px);border:1px solid rgba(255,255,255,.22);border-radius:22px;padding:6px 10px;pointer-events:auto;box-shadow:0 4px 14px rgba(0,0,0,.5)}
 .pwLbl{font-size:.6em;font-weight:900;color:#ffd76a;letter-spacing:1.5px}
 #powerNum{font-size:.7em;font-weight:900;color:#4cff9d;min-width:36px;text-align:right;font-variant-numeric:tabular-nums}
 #powerSlider{-webkit-appearance:none;appearance:none;flex:1;min-width:0;height:12px;border-radius:7px;background:linear-gradient(90deg,#00ff88,#ffcc00,#ff3333);outline:none;touch-action:none;cursor:pointer}
 #powerSlider::-webkit-slider-thumb{-webkit-appearance:none;width:28px;height:28px;border-radius:50%;background:#fff;border:3px solid #e94560;box-shadow:0 3px 10px rgba(0,0,0,.65);cursor:pointer}
 #powerSlider::-moz-range-thumb{width:26px;height:26px;border-radius:50%;background:#fff;border:3px solid #e94560;box-shadow:0 3px 10px rgba(0,0,0,.65);cursor:pointer}
-#fireBtn{flex:0 0 auto;width:96px;height:96px;border-radius:50%;background:radial-gradient(circle at 34% 28%,#ff8fa3,#e94560 58%,#98203a);border:3px solid #ffd75e;color:#fff;font-weight:900;font-size:1.02em;letter-spacing:2px;box-shadow:0 8px 20px rgba(0,0,0,.6),0 0 26px rgba(233,69,96,.55);touch-action:manipulation;pointer-events:auto;transition:transform .1s;text-shadow:0 2px 6px rgba(0,0,0,.6)}
+#fireBtn{flex:0 0 auto;width:64px;height:64px;border-radius:50%;background:radial-gradient(circle at 34% 28%,#ff8fa3,#e94560 58%,#98203a);border:2px solid #ffd75e;color:#fff;font-weight:900;font-size:.78em;letter-spacing:1px;box-shadow:0 6px 16px rgba(0,0,0,.6),0 0 18px rgba(233,69,96,.5);touch-action:manipulation;pointer-events:auto;transition:transform .1s;text-shadow:0 2px 6px rgba(0,0,0,.6)}
 #fireBtn:active{transform:scale(.93)}
 #fireBtn:disabled{filter:grayscale(.85) brightness(.65);box-shadow:none}
 .modal{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.72);display:flex;align-items:center;justify-content:center;z-index:80}
@@ -194,8 +192,8 @@ body.touchOn #powerWrap{bottom:calc(116px + env(safe-area-inset-bottom,0px))}
   #menuPanel .btn:last-child{color:#ffd76a;border-color:#e94560}
   #powerSlider{height:26px;border-radius:13px}
   #powerSlider::-webkit-slider-thumb{width:30px;height:30px}
-  #fireBtn{width:86px;height:86px;font-size:.94em}
-  #powerCtl{max-width:46%;padding:7px 10px}
+  #fireBtn{width:60px;height:60px;font-size:.74em}
+  #powerCtl{max-width:38%;padding:6px 9px}
   .pickCard{padding:13px}
   .pickFoot .btn{height:40px;font-size:.84em}
 }
@@ -225,13 +223,13 @@ body.touchOn #powerWrap{bottom:calc(116px + env(safe-area-inset-bottom,0px))}
   .menuBtn{height:29px;font-size:.7em;padding:0 8px}
   #menuPanel{gap:4px;top:calc(36px + env(safe-area-inset-top,0px))}
   #menuPanel .btn{height:36px;font-size:.8em}
-  #fireBtn{width:66px;height:66px;font-size:.76em;letter-spacing:1px}
-  #powerCtl{padding:6px 9px}
+  #fireBtn{width:52px;height:52px;font-size:.64em;letter-spacing:1px;border-width:2px}
+  #powerCtl{padding:5px 8px;max-width:34%}
   .pwLbl{font-size:.54em}
   #powerNum{font-size:.62em;min-width:32px}
-  body.touchOn #hint{right:calc(94px + env(safe-area-inset-right,0px));bottom:calc(24px + env(safe-area-inset-bottom,0px));max-width:calc(54% - 106px);font-size:min(.56em,1.7vw)}
-  body.touchOn #powerWrap{bottom:calc(80px + env(safe-area-inset-bottom,0px))}
-  #touchBar{bottom:calc(6px + env(safe-area-inset-bottom,0px))}
+  body.touchOn #hint{left:50%;right:auto;transform:translateX(-50%);bottom:auto;top:calc(48px + env(safe-area-inset-top,0px));max-width:92%;font-size:min(.54em,1.6vw)}
+  body.touchOn #powerWrap{bottom:calc(64px + env(safe-area-inset-bottom,0px))}
+  #touchBar{bottom:calc(4px + env(safe-area-inset-bottom,0px))}
 }
 </style>
 </head>
@@ -457,18 +455,13 @@ function resize() {
   canvas.height = Math.max(2, Math.round(ch * dpr));
   canvas.style.width = cw + 'px';
   canvas.style.height = ch + 'px';
-  const PAD = 12;
-  // topbar menumpuk di atas kanvas, jadi ruang aman dihitung dari tingginya.
-  // Ruang bawah: seluruh meja (rail termasuk) harus berada DI ATAS bar kontrol,
-  // sehingga meja tampil full dan tidak ada bagian yang tertutup.
+  const PAD = 6;
+  // MEJA MAKSIMAL: topbar transparan menumpuk di atas kanvas, kontrol
+  // TENAGA/TEMBAK dibuat melayang (overlay) sehingga tidak memakan ruang meja.
+  // Hanya sisakan jarak aman kecil agar rel tidak tertutup total.
   const tbEl = document.getElementById('topbar');
-  const top0 = (tbEl ? tbEl.getBoundingClientRect().height : 0) + PAD;
-  let botRes = 64;
-  if (touchMode) {
-    const tBar = document.getElementById('touchBar');
-    const bh = tBar ? tBar.getBoundingClientRect().height : 0;
-    botRes = (bh > 0 ? bh : 96) + 8;
-  }
+  const top0 = (tbEl ? tbEl.getBoundingClientRect().height : 0) + 2;
+  const botRes = touchMode ? 44 : 8;
   const ah = Math.max(90, ch - top0 - botRes - PAD);
   // poster samping sudah dihapus: hanya panel gagang kiri yang masih butuh ruang (kanan bebas)
   const showSide = (cw >= 1120 && ah >= 430);
@@ -718,7 +711,7 @@ function loadOpt() {
       if (d.opp) { for (let i = 0; i < OPPONENTS.length; i++) if (OPPONENTS[i].id === d.opp) oppIndex = i; }
       if (typeof d.res === 'string') { for (const r of RES_MODES) if (r.id === d.res) resMode = d.res; }
       if (typeof d.gfx === 'string') { for (const g of GFX_Q) if (g.id === d.gfx) gfxQ = d.gfx; }
-      if (typeof d.zoom === 'number' && d.zoom >= 0.85 && d.zoom <= 1.15) tableZoom = d.zoom;
+      if (typeof d.zoom === 'number' && d.zoom >= 0.85 && d.zoom <= 1.3) tableZoom = d.zoom;
     }
   } catch (e) {}
 }
@@ -739,7 +732,7 @@ function setGfxQ(id) {
   saveOpt();
 }
 function setZoom(v) {
-  tableZoom = Math.min(1.15, Math.max(0.85, Number(v) || 1));
+  tableZoom = Math.min(1.3, Math.max(0.85, Number(v) || 1));
   saveOpt();
   resize();
 }
@@ -2327,7 +2320,7 @@ function openRes() {
     '<p><span class="k">Kualitas grafik</span></p>' +
     '<div class="resGrid" id="gfxGrid">' + hGfx + '</div>' +
     '<div class="resRow"><span class="rl"><b>Ukuran meja</b><br><span id="zoomLbl">' + zpct + '%</span></span>' +
-    '<input type="range" id="zoomSlider" min="85" max="115" step="1" value="' + zpct + '"></div>' +
+    '<input type="range" id="zoomSlider" min="85" max="130" step="1" value="' + zpct + '"></div>' +
     '<div class="resRow"><span class="rl"><b>Layar penuh</b><br>Fullscreen HP / PC</span>' +
     '<button class="btn alt" id="btnFull" type="button" style="height:36px">⛶ Fullscreen</button></div>' +
     '<div class="resInfo" id="resInfo">' + resInfoText() + '</div>' +
