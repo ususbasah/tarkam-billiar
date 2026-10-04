@@ -409,7 +409,8 @@ const RES_MODES = [
   { id: 'hemat', label: 'Hemat', desc: 'DPR 1 • ringan, irit baterai' },
   { id: 'lancar', label: 'Lancar 720p', desc: 'DPR 1.5 • seimbang' },
   { id: 'hd', label: 'HD 1080p', desc: 'DPR 2 • tajam' },
-  { id: 'ultra', label: 'Ultra HD', desc: 'DPR 3 • paling tajam' }
+  { id: 'ultra', label: 'Ultra HD', desc: 'DPR 3 • paling tajam' },
+  { id: 'fhd', label: 'FHD 1920×1080', desc: 'Kunci 16:9 • render Full HD' }
 ];
 const GFX_Q = [
   { id: 'low', label: 'Ringan', desc: 'Efek minimal, FPS max' },
@@ -441,8 +442,16 @@ function toggleFullscreen() {
 }
 
 function resize() {
-  dpr = dprCapFor();
   const r = canvas.parentElement.getBoundingClientRect();
+  if (resMode === 'fhd') {
+    // Kunci render Full HD 1920×1080 (16:9): lebar backing = 1920px,
+    // tinggi mengikuti aspek layar supaya tidak melar.
+    // Di layar 16:9 landscape hasilnya pas 1920×1080.
+    dpr = 1920 / Math.max(1, r.width);
+    dpr = Math.min(4, Math.max(1, dpr));
+  } else {
+    dpr = dprCapFor();
+  }
   cw = r.width; ch = r.height;
   canvas.width = Math.max(2, Math.round(cw * dpr));
   canvas.height = Math.max(2, Math.round(ch * dpr));
@@ -743,7 +752,10 @@ function refreshResBtn() {
 }
 function resInfoText() {
   const w = Math.round(cw * dpr), h = Math.round(ch * dpr);
-  return 'Layar HP: ' + Math.round(cw) + '×' + Math.round(ch) + ' • Render: ' + w + '×' + h + ' • DPR ' + dpr.toFixed(2).replace(/\.?0+$/, '') + ' • ' + resLabel(resMode) + ' / Grafik ' + gfxLabel(gfxQ);
+  const asp = ch > 0 ? (cw / ch) : 0;
+  const aspTxt = asp ? (' • Aspek ' + asp.toFixed(2) + (Math.abs(asp - 16 / 9) < 0.03 ? ' (16:9 ✔)' : ' (target 16:9)')) : '';
+  const fhdNote = (resMode === 'fhd') ? ' • Meja dikunci 1920×1080' : '';
+  return 'Layar HP: ' + Math.round(cw) + '×' + Math.round(ch) + ' • Render: ' + w + '×' + h + ' • DPR ' + dpr.toFixed(2).replace(/\.?0+$/, '') + aspTxt + fhdNote + ' • ' + resLabel(resMode) + ' / Grafik ' + gfxLabel(gfxQ);
 }
 
 // ============ ATUR BOLA ============
@@ -2247,6 +2259,26 @@ function render() {
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   ctx.fillStyle = '#0d1b2a';
   ctx.fillRect(0, 0, cw, ch);
+  // Bingkai panduan 16:9 saat mode FHD 1920×1080 aktif
+  if (resMode === 'fhd' && cw > 0 && ch > 0) {
+    const asp = cw / ch;
+    if (Math.abs(asp - 16 / 9) >= 0.03) {
+      let fw = cw, fh = cw * 9 / 16;
+      if (fh > ch) { fh = ch; fw = fh * 16 / 9; }
+      const fx = (cw - fw) / 2, fy = (ch - fh) / 2;
+      ctx.save();
+      ctx.strokeStyle = 'rgba(255,215,0,.55)';
+      ctx.lineWidth = 2;
+      ctx.setLineDash([10, 8]);
+      ctx.strokeRect(fx, fy, fw, fh);
+      ctx.setLineDash([]);
+      ctx.fillStyle = 'rgba(255,215,0,.9)';
+      ctx.font = 'bold 12px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('AREA 16:9 — 1920×1080 (putar HP landscape)', cw / 2, fy + 18);
+      ctx.restore();
+    }
+  }
   ctx.save();
   ctx.translate(ox, oy);
   ctx.scale(scale, scale);
